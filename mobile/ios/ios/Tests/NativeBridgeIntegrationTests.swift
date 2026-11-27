@@ -15,6 +15,25 @@ private actor ScriptedModel: Intelligence {
 /// Runs in the native-required iOS simulator test host.
 /// No real model inference or personal data is involved.
 @MainActor final class NativeBridgeIntegrationTests: XCTestCase {
+    func testNativeCapabilityPolicyMatchesSwiftAndRejectsUnknownActions() async throws {
+        XCTAssertTrue(makeToolAuthorization() is NativeToolAuthorization)
+        let native = NativeToolAuthorization()
+        let local = LocalToolAuthorization()
+        for action in ["reply", "current_time", "search_memory", "save_memory", "", "shell", "network:fetch", "file:write", "schedule:create", "system:admin", "Reply", "reply ", "*", "reply\u{0000}shell", String(repeating: "x", count: 1100)] {
+            XCTAssertEqual(native.permits(action), local.permits(action), action)
+        }
+    }
+
+    func testNativePolicyIsEnforcedByAgent() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let agent = try Agent(engine: ScriptedModel([.init("network:fetch", "synthetic")]),
+                              file: dir.appendingPathComponent("state.json"), bridge: NativeConversationBridge(),
+                              authorization: NativeToolAuthorization())
+        do { _ = try await agent.start("synthetic"); XCTFail("Unknown tool permitted") }
+        catch { let state = await agent.snapshot(); XCTAssertEqual(state.status, .failed); XCTAssertTrue(state.notes.isEmpty) }
+    }
+
     func testNativeBridgeSelected() async throws {
         XCTAssertTrue(makeConversationBridge() is NativeConversationBridge)
         XCTAssertEqual(conversationBridgeLabel, "Upstream Rust conversation bridge")
@@ -57,16 +76,16 @@ private actor ScriptedModel: Intelligence {
         defer { try? FileManager.default.removeItem(at: dir) }
         let file = dir.appendingPathComponent("state.json")
         let agent = try Agent(engine: ScriptedModel([.init("save_memory", "Synthetic blue")]),
-                              file: file, bridge: NativeConversationBridge())
+                              file: file, bridge: NativeConversationBridge(), authorization: NativeToolAuthorization())
         let pending = try await agent.start("Remember synthetic blue")
         XCTAssertEqual(pending.status, .approval)
         XCTAssertTrue(pending.notes.isEmpty)
         let reopened = try Agent(engine: ScriptedModel([.init("reply", "Saved")]),
-                                 file: file, bridge: NativeConversationBridge())
+                                 file: file, bridge: NativeConversationBridge(), authorization: NativeToolAuthorization())
         let saved = try await reopened.approve(true)
         XCTAssertEqual(saved.status, .complete)
         XCTAssertEqual(saved.notes.map(\.text), ["Synthetic blue"])
-        let finalAgent = try Agent(engine: ScriptedModel([]), file: file, bridge: NativeConversationBridge())
+        let finalAgent = try Agent(engine: ScriptedModel([]), file: file, bridge: NativeConversationBridge(), authorization: NativeToolAuthorization())
         let final = await finalAgent.snapshot()
         XCTAssertEqual(final.notes.map(\.text), ["Synthetic blue"])
     }
@@ -77,7 +96,7 @@ private actor ScriptedModel: Intelligence {
         let agent = try Agent(engine: ScriptedModel([.init("save_memory", "synthetic"),
                                                     .init("save_memory", "synthetic"),
                                                     .init("reply", "Not saved")]),
-                              file: dir.appendingPathComponent("state.json"), bridge: NativeConversationBridge())
+                              file: dir.appendingPathComponent("state.json"), bridge: NativeConversationBridge(), authorization: NativeToolAuthorization())
         _ = try await agent.start("Remember synthetic")
         let result = try await agent.approve(false)
         XCTAssertEqual(result.status, .complete)
