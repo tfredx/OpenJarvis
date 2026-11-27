@@ -125,8 +125,6 @@ public enum SQLiteMigrationError: Error, LocalizedError, Equatable {
 @MainActor enum SQLiteShadowMigration {
     static func rehearse(scratchRoot: URL, source: () throws -> SQLiteSessionArchive) throws -> SQLiteMigrationReport {
         let original = try source()
-        let fm = FileManager.default
-        try fm.createDirectory(at: scratchRoot, withIntermediateDirectories: true)
         let stage = try SQLiteMigrationJournal.prepare(in: scratchRoot)
         let report: SQLiteMigrationReport
         do {
