@@ -1,0 +1,27 @@
+name: OpenJarvisMobile
+options:
+  bundleIdPrefix: org.openjarvis.mobileprototype
+  deploymentTarget:
+    iOS: '27.0'
+packages:
+  JarvisCore:
+    path: ..
+targets:
+  OpenJarvisMobile:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - package: JarvisCore
+        product: JarvisCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.openjarvis.mobileprototype.app
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Jarvis
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        MARKETING_VERSION: 0.2.0
+        CURRENT_PROJECT_VERSION: 2
+        SWIFT_VERSION: 6.0
+        TARGETED_DEVICE_FAMILY: '1'
+        CODE_SIGN_STYLE: Automatic
