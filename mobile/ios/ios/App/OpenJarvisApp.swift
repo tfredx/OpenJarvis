@@ -31,7 +31,7 @@ enum LocalError: LocalizedError { case unavailable; var errorDescription: String
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
             var directory = root; var values = URLResourceValues(); values.isExcludedFromBackup = true; try directory.setResourceValues(values)
             try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: root.path)
-            agent = try Agent(engine: AppleEngine(), file: root.appendingPathComponent("state.json"), bridge: makeConversationBridge())
+            agent = try Agent(engine: AppleEngine(), file: root.appendingPathComponent("state.json"), bridge: makeConversationBridge(), authorization: makeToolAuthorization())
         } catch { self.error = error.localizedDescription }
     }
     func load() async { if let agent { snapshot = await agent.snapshot() } }

@@ -29,11 +29,15 @@ public actor Agent {
     private var active = false
     private let maxSteps: Int
     private let bridge: any ConversationBridge
-    public init(engine: any Intelligence, file: URL, maxSteps: Int = 6, bridge: any ConversationBridge = SwiftConversationBridge()) throws {
-        self.engine = engine; self.file = file; self.maxSteps = max(1, maxSteps); self.bridge = bridge
+    private let authorization: any ToolAuthorization
+    public init(engine: any Intelligence, file: URL, maxSteps: Int = 6, bridge: any ConversationBridge = SwiftConversationBridge(), authorization: any ToolAuthorization = LocalToolAuthorization()) throws {
+        self.engine = engine; self.file = file; self.maxSteps = max(1, maxSteps); self.bridge = bridge; self.authorization = authorization
         if FileManager.default.fileExists(atPath: file.path) { state = try JSONDecoder().decode(Snapshot.self, from: Data(contentsOf: file)) } else { state = Snapshot() }
     }
     public func snapshot() -> Snapshot { state }
+    private func permits(_ action: String) -> Bool {
+        LocalToolAuthorization().permits(action) && authorization.permits(action)
+    }
     private func save() throws {
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try JSONEncoder().encode(state).write(to: file, options: .atomic)
@@ -50,6 +54,11 @@ public actor Agent {
     }
     public func approve(_ allow: Bool) async throws -> Snapshot {
         guard !active, state.status == .approval, let pending = state.pending, pending.action == "save_memory" else { throw AgentError.noApproval }
+        if allow {
+            guard permits("save_memory"), state.memoryWriteDenied != true,
+                  !pending.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  pending.value.count <= 2000 else { throw AgentError.invalidDecision }
+        }
         if allow { state.notes.append(Note(pending.value)); state.messages.append(Message("tool", "Memory saved by explicit user approval.")) }
         else { state.memoryWriteDenied = true; state.messages.append(Message("tool", "User declined memory write. Do not request it again in this task.")) }
         state.pending = nil; state.status = .running
@@ -77,7 +86,7 @@ public actor Agent {
             while state.steps < maxSteps {
                 try Task.checkCancellation()
                 let latest = state.messages.last(where: { $0.role == "user" })?.text ?? ""
-                let relevant = search(latest).prefix(3).map(\.text)
+                let relevant = permits("search_memory") ? Array(search(latest).prefix(3)).map(\.text) : []
                 let history = try state.messages.suffix(32).map { message -> WireMessage in
                     guard let role = WireMessage.Role(rawValue: message.role) else { throw BridgeError.invalidRole }
                     return WireMessage(role: role, content: String(message.text.prefix(1000)))
@@ -92,6 +101,7 @@ public actor Agent {
                 let d = try await engine.decide(prompt: prompt)
                 try Task.checkCancellation(); state.steps += 1
                 guard d.value.count <= 16000 else { throw AgentError.tooLong }
+                guard permits(d.action) else { throw AgentError.invalidDecision }
                 switch d.action {
                 case "reply": state.messages.append(Message("assistant", d.value)); state.status = .complete; try save(); return state
                 case "search_memory": state.messages.append(Message("tool", "Memory matches: " + search(d.value).prefix(5).map(\.text).joined(separator: "\n")))

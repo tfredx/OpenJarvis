@@ -7,6 +7,12 @@ xcrun --sdk iphoneos --show-sdk-version
 xcrun --sdk iphonesimulator --show-sdk-version
 mkdir -p "$ROOT/audit" "$ROOT/ios/Frameworks"
 cd "$ROOT/bridge"
+# Refuse a modified or missing upstream capability module. This module is
+# compiled directly from the fork's unchanged pinned upstream source tree.
+UPSTREAM_CAPABILITIES="$ROOT/../../rust/crates/openjarvis-security/src/capabilities.rs"
+[[ $(git hash-object "$UPSTREAM_CAPABILITIES") == f42a68827c969138f0a494960564df90eaf78435 ]] || {
+  echo 'Upstream capability module does not match pinned source; review explicitly.' >&2; exit 1;
+}
 # Pin the compiler that passed host tests and both Apple cross-builds.
 TOOLCHAIN=1.100.0
 rustup toolchain install "$TOOLCHAIN" --profile minimal --component llvm-tools-preview
@@ -31,7 +37,32 @@ for target in aarch64-apple-ios aarch64-apple-ios-sim; do
   # This does not replace the later Apple linker validation.
   "$NM" --extern-only --defined-only --no-demangle "$CARGO_TARGET_DIR/$target/release/libopenjarvis_mobile_bridge.a" > "$ROOT/audit/symbols-$target.txt" 2> "$ROOT/audit/symbols-$target.stderr.log"
   grep -Eq '[[:space:]]_oj_window_json$' "$ROOT/audit/symbols-$target.txt"
-  grep -Eq '[[:space:]]_oj_string_free$' "$ROOT/audit/symbols-$target.txt"
+  grep -Eq '[[:space:]]_oj_string_free
+done
+OUTPUT="$ROOT/ios/Frameworks/OpenJarvisBridge.xcframework"
+TEMP=$(mktemp -d)
+trap 'rm -rf "$TEMP"' EXIT
+xcodebuild -create-xcframework \
+ -library "$CARGO_TARGET_DIR/aarch64-apple-ios/release/libopenjarvis_mobile_bridge.a" -headers "$ROOT/bridge/include" \
+ -library "$CARGO_TARGET_DIR/aarch64-apple-ios-sim/release/libopenjarvis_mobile_bridge.a" -headers "$ROOT/bridge/include" \
+ -output "$TEMP/OpenJarvisBridge.xcframework" 2>&1 | tee "$ROOT/audit/xcframework.log"
+rm -rf "$OUTPUT"
+mv "$TEMP/OpenJarvisBridge.xcframework" "$OUTPUT"
+printf 'Built %s; app linking/device test still required.\n' "$OUTPUT"
+ "$ROOT/audit/symbols-$target.txt"
+  grep -Eq '[[:space:]]_oj_authorize_action_json
+done
+OUTPUT="$ROOT/ios/Frameworks/OpenJarvisBridge.xcframework"
+TEMP=$(mktemp -d)
+trap 'rm -rf "$TEMP"' EXIT
+xcodebuild -create-xcframework \
+ -library "$CARGO_TARGET_DIR/aarch64-apple-ios/release/libopenjarvis_mobile_bridge.a" -headers "$ROOT/bridge/include" \
+ -library "$CARGO_TARGET_DIR/aarch64-apple-ios-sim/release/libopenjarvis_mobile_bridge.a" -headers "$ROOT/bridge/include" \
+ -output "$TEMP/OpenJarvisBridge.xcframework" 2>&1 | tee "$ROOT/audit/xcframework.log"
+rm -rf "$OUTPUT"
+mv "$TEMP/OpenJarvisBridge.xcframework" "$OUTPUT"
+printf 'Built %s; app linking/device test still required.\n' "$OUTPUT"
+ "$ROOT/audit/symbols-$target.txt"
 done
 OUTPUT="$ROOT/ios/Frameworks/OpenJarvisBridge.xcframework"
 TEMP=$(mktemp -d)

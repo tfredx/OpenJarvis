@@ -1,17 +1,7 @@
-# Current handoff — native build distribution
+# Current handoff — upstream capability policy proposal
 
-Date: 2026-11-26 ET. Stage: v0.2.2 simulator validation pending, packaging proposal. No release tag.
-Fork tfredx/OpenJarvis; upstream pin 556ddf32456bdf5c40195714a3385b339b5f98f9; ios/main base 17965e4b7f8121bcd57ff1570d1d4b55c4592810. PRs #1, #5–#10 merged. Issue #2 closed; #3 and #4 open. Current branch build/ios-native-artifacts.
+Date: 2026-11-26 ET. Base ios/main 3b209e9121b64edacfce8cca3f58930af1efccff. Upstream 556ddf32456bdf5c40195714a3385b339b5f98f9. PRs #1, #5–#11 merged. Baseline run 45932697497 passed 16 Swift, 3 Rust and 6 hosted tests, both unsigned Xcode builds, archive hashes and artifact publication (15169941661). Issue #4 physical validation open. Required checks were still absent from ruleset 28209245 when inspected.
 
-## Evidence
-PR #9 run 45931605877 passed 16 portable tests, 3 Rust host tests, both ARM64 cross-builds, symbols, XCFramework and unsigned Xcode device/simulator builds. PR #10 runs 45932108318 and 45932210379 passed portable jobs; native jobs still in progress when checked. No hosted simulator test pass yet. Branch rules currently require PR but not status checks.
+Current branch feat/ios-capability-policy: direct compilation of unchanged upstream capability module in existing Rust bridge, fixed default-deny grants, independent Swift authorization, approval recheck, implicit memory read gating, additional tests. See docs/decisions/0003-capability-boundary.md. No new capability exposed. No new CI pass claimed. No tag.
 
-## Current change
-Add verified unsigned device and simulator ZIP artifacts after native hosted tests, build manifest/checksums and device-installation guide. No runtime changes. No new test results or packaged artifacts claimed until CI completes. See docs/validation/native-artifacts.md.
-
-## Next steps
-1. Inspect actual native jobs for PR #10 and this branch; if any hosted tests fail, fix first concrete error in scoped PR. Require both CI jobs and observed six hosted tests before merge.
-2. Confirm unsigned artifact archive/manifest upload and checksum; do not represent as signed installable IPA.
-3. Owner enables required status checks Mobile portable Swift tests and Mobile native iOS build on ios/main; verify ruleset. Pin XcodeGen and audit dependencies. Issue #3 remains open.
-4. Follow docs/DEVICE_INSTALL.md and issue #4 on Mac/iPhone; record actual synthetic device validation. Do not expand runtime until validated.
-5. Then scope upstream security/session management. Keep main untouched; each PR updates this handoff.
+Next: verify CI checks and all tests on this head. Review lockfile root dependency edge and upstream blob verification, ensure all original tests pass and native tests exercise the actual policy. Merge only when green and owner has validated the physical baseline per issue #4 (or explicitly accepts deferral). Enable both required checks; close #3 after rule verification and remaining toolchain/dependency review. Then plan sessions, scanner integration and SQLite independently. Preserve upstream main. No credentials or user data in this public repository.

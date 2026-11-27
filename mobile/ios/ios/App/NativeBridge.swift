@@ -14,7 +14,22 @@ struct NativeConversationBridge: ConversationBridge {
         return try JSONDecoder().decode([WireMessage].self, from: Data(String(cString: result).utf8))
     }
 }
+
+struct NativeToolAuthorization: ToolAuthorization {
+    func permits(_ action: String) -> Bool {
+        guard let data = try? JSONEncoder().encode(action) else { return false }
+        let json = String(decoding: data, as: UTF8.self)
+        return json.withCString { oj_authorize_action_json($0) == 1 }
+    }
+}
 #endif
+func makeToolAuthorization() -> any ToolAuthorization {
+    #if canImport(OpenJarvisBridge)
+    return NativeToolAuthorization()
+    #else
+    return LocalToolAuthorization()
+    #endif
+}
 func makeConversationBridge() -> any ConversationBridge {
     #if canImport(OpenJarvisBridge)
     return NativeConversationBridge()
