@@ -29,7 +29,7 @@ public enum SessionError: Error, LocalizedError, Equatable {
 /// Atomic files + a persisted transition allow recovery after process interruption.
 /// No global memory, synchronization, or forensic deletion guarantee.
 @MainActor public final class SessionRepository {
-    private struct Catalog: Codable {
+    private struct Catalog: Codable, Equatable {
         var version = 1
         var activeID: UUID
         var sessions: [SessionSummary]
@@ -74,6 +74,30 @@ public enum SessionError: Error, LocalizedError, Equatable {
         let url = snapshotURL(catalog.activeID)
         _ = try Self.decodeSnapshot(at: url)
         return url
+    }
+
+    /// Read-only export; the sole owner must hold the repository idle.
+    /// Reject external catalog changes rather than exporting stale metadata.
+    func exportArchive() throws -> SQLiteSessionArchive {
+        try ready()
+        let catalogBytes = try Data(contentsOf: catalogURL)
+        guard try JSONDecoder().decode(Catalog.self, from: catalogBytes) == catalog else {
+            throw SessionError.recoveryRequired
+        }
+        let ids = Set(catalog.sessions.map(\.id))
+        guard try Self.managedIDs(in: root).isSubset(of: ids) else {
+            throw SessionError.orphanedSnapshot
+        }
+        let records = try catalog.sessions.map { item -> SQLiteSessionRecord in
+            let url = snapshotURL(item.id)
+            guard fm.fileExists(atPath: url.path) else { throw SessionError.missingSnapshot }
+            let bytes = try Data(contentsOf: url)
+            _ = try JSONDecoder().decode(Snapshot.self, from: bytes)
+            return SQLiteSessionRecord(id: item.id, title: item.title, createdAt: item.createdAt, snapshot: bytes)
+        }
+        guard try Data(contentsOf: catalogURL) == catalogBytes,
+              try Self.managedIDs(in: root) == ids else { throw SessionError.recoveryRequired }
+        return SQLiteSessionArchive(activeID: catalog.activeID, sessions: records)
     }
 
     @discardableResult public func create(title: String) throws -> SessionSummary {
