@@ -60,7 +60,6 @@ def command(*args):
     return subprocess.check_output(args, text=True).strip()
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
-files = [out / f"OpenJarvisMobile-{kind}-unsigned.zip" for kind in ("device", "simulator")]
 release_version = os.environ.get("IOS_RELEASE_VERSION") or None
 device_version = os.environ.get("IOS_RELEASE_VERSION") or os.environ.get("IOS_PROJECT_VERSION")
 if not device_version:
@@ -69,8 +68,11 @@ if not device_version:
         ".ios-build/device/Build/Products/Debug-iphoneos/OpenJarvisMobile.app/Info.plist",
     ], text=True).strip()
 if release_version:
-    files.append(out / f"OpenJarvisMobile-ios-v{release_version}-unsigned.ipa")
+    # Release upload intentionally contains only the IPA, manifest and checksums.
+    # Keep both inventories aligned so a downloaded release artifact verifies alone.
+    files = [out / f"OpenJarvisMobile-ios-v{release_version}-unsigned.ipa"]
 else:
+    files = [out / f"OpenJarvisMobile-{kind}-unsigned.zip" for kind in ("device", "simulator")]
     files.append(out / f"OpenJarvisMobile-{device_version}-dev-{os.environ.get('GITHUB_RUN_NUMBER', 'local')}-unsigned.ipa")
 manifest = {
     "schema_version": 1,

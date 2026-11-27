@@ -2,6 +2,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 for script in "$ROOT"/scripts/*.sh; do bash -n "$script"; done
+[[ -x "$ROOT/scripts/test-build-scripts.sh" && -x "$ROOT/scripts/package-native-builds.sh" ]]
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 VERIFY="$ROOT/scripts/verify-bridge-symbols.sh"
