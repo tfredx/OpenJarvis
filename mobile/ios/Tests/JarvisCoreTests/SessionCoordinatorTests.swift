@@ -60,6 +60,7 @@ private actor GateModel: Intelligence {
         let started = await gate.hasStarted()
         XCTAssertTrue(started)
         XCTAssertTrue(c.busy)
+        XCTAssertThrowsError(try c.rehearseSQLiteMigration(scratchRoot: dir))
         XCTAssertThrowsError(try c.select(first))
         XCTAssertThrowsError(try c.create(title: "Third"))
         XCTAssertThrowsError(try c.rename(second, title: "Other"))

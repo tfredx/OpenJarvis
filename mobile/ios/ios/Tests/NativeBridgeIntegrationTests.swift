@@ -69,6 +69,23 @@ private actor ScriptedModel: Intelligence {
         try reopened.select(first); XCTAssertEqual(reopened.snapshot.status, .idle)
     }
 
+    func testNativeSQLiteMigrationRehearsalPreservesPendingApproval() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let scratch = dir.appendingPathComponent("scratch")
+        try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
+        let source = dir.appendingPathComponent("source")
+        let c = try SessionCoordinator(root: source, engine: ScriptedModel([.init("save_memory", "synthetic blue"), .init("reply", "saved")]),
+                                       bridge: NativeConversationBridge(), authorization: NativeToolAuthorization())
+        try await c.submit("remember synthetic blue")
+        let expected = c.snapshot
+        let report = try c.rehearseSQLiteMigration(scratchRoot: scratch)
+        XCTAssertEqual(report.sessionCount, 1); XCTAssertEqual(report.pendingApprovalCount, 1)
+        XCTAssertEqual(report.approvedMemoryCount, 0); XCTAssertEqual(c.snapshot, expected)
+        XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: scratch.path).isEmpty)
+        try await c.approve(true); XCTAssertEqual(c.snapshot.notes.map(\.text), ["synthetic blue"])
+    }
+
     func testNativeBridgeSelected() async throws {
         XCTAssertTrue(makeConversationBridge() is NativeConversationBridge)
         XCTAssertEqual(conversationBridgeLabel, "Upstream Rust conversation bridge")

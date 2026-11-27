@@ -50,6 +50,18 @@ import Foundation
         try transition { try repository.eraseAll() }
     }
 
+    /// Development verification only. No UI or automatic migration invokes this.
+    /// Saved pending/running tasks are preserved; a live writer is prohibited.
+    public func rehearseSQLiteMigration(scratchRoot: URL) throws -> SQLiteMigrationReport {
+        guard !busy, isReady else { throw AgentError.busy }
+        try verifyPersisted(snapshot)
+        let report = try SQLiteShadowMigration.rehearse(scratchRoot: scratchRoot) {
+            try repository.exportArchive()
+        }
+        try verifyPersisted(snapshot)
+        return report
+    }
+
     private func readActive() throws -> Snapshot {
         try JSONDecoder().decode(Snapshot.self, from: Data(contentsOf: repository.activeSnapshotURL()))
     }
