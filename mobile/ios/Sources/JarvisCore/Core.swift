@@ -14,7 +14,7 @@ public struct Decision: Codable, Sendable, Equatable {
 }
 public protocol Intelligence: Sendable { func decide(prompt: String) async throws -> Decision }
 public enum Status: String, Codable, Sendable { case idle, running, approval, complete, failed, cancelled }
-public struct Snapshot: Codable, Sendable {
+public struct Snapshot: Codable, Sendable, Equatable {
     public var messages: [Message] = []; public var notes: [Note] = []
     public var status: Status = .idle; public var pending: Decision?; public var steps = 0
     public var memoryWriteDenied: Bool? = false

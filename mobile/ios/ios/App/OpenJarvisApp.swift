@@ -17,34 +17,81 @@ struct AppleEngine: Intelligence {
 enum LocalError: LocalizedError { case unavailable; var errorDescription: String? { "Apple Intelligence is unavailable. Enable it in Settings and allow the model to finish downloading." } }
 
 @MainActor final class AppState: ObservableObject {
-    @Published var snapshot = Snapshot()
-    @Published var error = ""
-    @Published var busy = false
+    @Published private(set) var snapshot = Snapshot()
+    @Published private(set) var error = ""
+    @Published private(set) var busy = false
+    @Published private(set) var ready = false
+    @Published private(set) var sessions: [SessionSummary] = []
+    @Published private(set) var activeID: UUID?
     @Published var input = ""
-    private var agent: Agent?
+    private var coordinator: SessionCoordinator?
     private var task: Task<Void, Never>?
     private let speaker = AVSpeechSynthesizer()
     static let shared = AppState()
+
+    var canChangeSessions: Bool {
+        !busy && ready && coordinator?.canChangeSessions == true
+    }
+    var activeTitle: String { sessions.first { $0.id == activeID }?.title ?? "Jarvis" }
+
     private init() {
         do {
             let root = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("Jarvis", isDirectory: true)
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-            var directory = root; var values = URLResourceValues(); values.isExcludedFromBackup = true; try directory.setResourceValues(values)
+            var directory = root; var values = URLResourceValues(); values.isExcludedFromBackup = true
+            try directory.setResourceValues(values)
             try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: root.path)
-            agent = try Agent(engine: AppleEngine(), file: root.appendingPathComponent("state.json"), bridge: makeConversationBridge(), authorization: makeToolAuthorization())
+            coordinator = try SessionCoordinator(root: root, engine: AppleEngine(), bridge: makeConversationBridge(), authorization: makeToolAuthorization())
+            refresh()
         } catch { self.error = error.localizedDescription }
     }
-    func load() async { if let agent { snapshot = await agent.snapshot() } }
-    func submit() { let request = input; guard !request.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }; input = ""; perform { try await $0.start(request) } }
+    private func refresh() {
+        guard let coordinator, coordinator.isReady else {
+            ready = false; snapshot = Snapshot(); sessions = []; activeID = nil; input = ""
+            speaker.stopSpeaking(at: .immediate)
+            return
+        }
+        if activeID != coordinator.activeID {
+            input = ""; speaker.stopSpeaking(at: .immediate)
+        }
+        snapshot = coordinator.snapshot; sessions = coordinator.sessions; activeID = coordinator.activeID; ready = true
+    }
+    func prefill(_ request: String) -> Bool {
+        guard canChangeSessions else { return false }
+        input = request
+        return true
+    }
+    func submit() {
+        guard canChangeSessions else { return }
+        let request = input
+        guard !request.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        input = ""
+        perform { try await $0.submit(request) }
+    }
     func resume() { perform { try await $0.resume() } }
     func approval(_ allow: Bool) { perform { try await $0.approve(allow) } }
-    func cancel() { if busy { task?.cancel() } else { perform { try await $0.cancel() } } }
-    func eraseAll() { perform { try await $0.eraseAll() } }
+    func cancel() { if busy { task?.cancel() } else { perform { try await $0.discard() } } }
+    func eraseAll() { change { try $0.eraseAll() } }
     func delete(_ id: UUID) { perform { try await $0.deleteMemory(id) } }
+    func createSession(title: String) { change { try $0.create(title: title) } }
+    func selectSession(_ id: UUID) { change { try $0.select(id) } }
+    func renameSession(_ id: UUID, title: String) { change { try $0.rename(id, title: title) } }
+    func deleteSession(_ id: UUID) { change { try $0.delete(id) } }
     func speak(_ text: String) { speaker.stopSpeaking(at: .immediate); let utterance = AVSpeechUtterance(string: text); utterance.rate = AVSpeechUtteranceDefaultSpeechRate; speaker.speak(utterance) }
-    private func perform(_ work: @escaping @Sendable (Agent) async throws -> Snapshot) {
-        guard !busy, let agent else { return }; busy = true; error = ""
-        task = Task { defer { busy = false; task = nil }; do { snapshot = try await work(agent) } catch { self.error = error.localizedDescription; snapshot = await agent.snapshot() } }
+
+    private func change(_ work: (SessionCoordinator) throws -> Void) {
+        guard canChangeSessions, let coordinator else { return }
+        error = ""
+        do { try work(coordinator) } catch { self.error = error.localizedDescription }
+        refresh()
+    }
+    private func perform(_ work: @escaping @MainActor (SessionCoordinator) async throws -> Void) {
+        guard !busy, ready, let coordinator else { return }
+        busy = true; error = ""
+        task = Task {
+            defer { refresh(); busy = false; task = nil }
+            do { try await work(coordinator) } catch { self.error = error.localizedDescription }
+        }
     }
 }
 
@@ -54,8 +101,10 @@ struct AskJarvisIntent: AppIntent {
     static let openAppWhenRun = true
     @Parameter(title: "Request") var request: String
     @MainActor func perform() async throws -> some IntentResult & ProvidesDialog {
-        AppState.shared.input = request
-        return .result(dialog: "Your request is ready in Jarvis.")
+        guard AppState.shared.prefill(request) else {
+            return .result(dialog: "Resolve the current Jarvis task before adding another request.")
+        }
+        return .result(dialog: "Your request is ready in the selected Jarvis conversation.")
     }
 }
 struct JarvisShortcuts: AppShortcutsProvider {
@@ -65,7 +114,7 @@ struct JarvisShortcuts: AppShortcutsProvider {
 }
 @main struct OpenJarvisApp: App {
     @StateObject private var model = AppState.shared
-    var body: some Scene { WindowGroup { RootView(model: model).task { await model.load() } } }
+    var body: some Scene { WindowGroup { RootView(model: model) } }
 }
 struct RootView: View {
     @ObservedObject var model: AppState
@@ -83,16 +132,18 @@ struct RootView: View {
                             }
                         }}.onChange(of: model.snapshot.messages.count) { _, _ in if let id = model.snapshot.messages.last?.id { proxy.scrollTo(id, anchor: .bottom) } }
                     }
-                    if !model.error.isEmpty { Text(model.error).font(.footnote).foregroundStyle(.red) }
                     if let pending = model.snapshot.pending { VStack(alignment: .leading) { Text("Approve memory write?").font(.headline); Text(pending.value); HStack { Button("Deny", role: .cancel) { model.approval(false) }; Spacer(); Button("Approve") { model.approval(true) }.buttonStyle(.borderedProminent) } }.padding().background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12)).disabled(model.busy) }
                     if model.busy { HStack { ProgressView(); Text("Working locally"); Spacer(); Button("Cancel") { model.cancel() } } }
                     else if model.snapshot.status == .running { HStack { Button("Resume interrupted task") { model.resume() }; Spacer(); Button("Discard", role: .destructive) { model.cancel() } } }
-                    HStack(alignment: .bottom) { TextField("Ask Jarvis…", text: $model.input, axis: .vertical).lineLimit(1...5).textFieldStyle(.roundedBorder); Button { model.submit() } label: { Image(systemName: "arrow.up.circle.fill").font(.system(size: 34)) }.accessibilityLabel("Send") }.disabled(model.busy || model.snapshot.status == .approval || model.snapshot.status == .running)
-                }.padding().navigationTitle("Jarvis")
+                    HStack(alignment: .bottom) { TextField("Ask Jarvis…", text: $model.input, axis: .vertical).lineLimit(1...5).textFieldStyle(.roundedBorder); Button { model.submit() } label: { Image(systemName: "arrow.up.circle.fill").font(.system(size: 34)) }.accessibilityLabel("Send") }.disabled(!model.canChangeSessions)
+                }.padding().navigationTitle(model.activeTitle)
             }.tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
+            SessionListView(model: model).tabItem { Label("Sessions", systemImage: "rectangle.stack") }
             NavigationStack { List { Section("Task state") { LabeledContent("Status", value: model.snapshot.status.rawValue); LabeledContent("Model decisions", value: String(model.snapshot.steps)); LabeledContent("Pending approval", value: model.snapshot.pending == nil ? "No" : "Yes") }; Section("Execution") { Text("Foreground execution and manual checkpoint recovery. Continuous background scheduling is not enabled in this release.") } }.navigationTitle("Activity") }.tabItem { Label("Activity", systemImage: "waveform.path") }
-            NavigationStack { List { if model.snapshot.notes.isEmpty { Text("Approved memories appear here.").foregroundStyle(.secondary) }; ForEach(model.snapshot.notes) { note in HStack { Text(note.text); Spacer(); Button(role: .destructive) { model.delete(note.id) } label: { Image(systemName: "trash") }.disabled(model.busy || model.snapshot.status == .running || model.snapshot.status == .approval) } } }.navigationTitle("Memory") }.tabItem { Label("Memory", systemImage: "brain") }
-            NavigationStack { List { Section("Intelligence") { LabeledContent("Provider", value: "Apple on-device"); LabeledContent("Cloud fallback", value: "Off") }; Section("Build") { LabeledContent("Version", value: "0.2.0"); LabeledContent("Conversation bridge", value: conversationBridgeLabel); Text("Experimental mobile prototype. Agent orchestration remains Swift.") }; Section("Privacy") { Text("Conversation and approved memories are stored locally and excluded from backup. Deleting a memory does not erase earlier conversation messages."); Button("Erase all local conversations and memory", role: .destructive) { confirmErase = true }.disabled(model.busy) } }.navigationTitle("Settings") }.tabItem { Label("Settings", systemImage: "gearshape") }
-        }.tint(.cyan).confirmationDialog("Erase all local data?", isPresented: $confirmErase, titleVisibility: .visible) { Button("Erase all", role: .destructive) { model.eraseAll() }; Button("Cancel", role: .cancel) {} }
+            NavigationStack { List { if model.snapshot.notes.isEmpty { Text("Approved memories in this conversation appear here.").foregroundStyle(.secondary) }; ForEach(model.snapshot.notes) { note in HStack { Text(note.text); Spacer(); Button(role: .destructive) { model.delete(note.id) } label: { Image(systemName: "trash") }.disabled(model.busy || model.snapshot.status == .running || model.snapshot.status == .approval) } } }.navigationTitle("Memory · " + model.activeTitle) }.tabItem { Label("Memory", systemImage: "brain") }
+            NavigationStack { List { Section("Intelligence") { LabeledContent("Provider", value: "Apple on-device"); LabeledContent("Cloud fallback", value: "Off") }; Section("Build") { LabeledContent("Version", value: "0.3.2"); LabeledContent("Conversation bridge", value: conversationBridgeLabel); Text("Experimental mobile prototype. Agent orchestration remains Swift.") }; Section("Privacy") { Text("Each conversation has its own history, approved memories and task state. Data is stored locally and excluded from backup. Deleting a memory does not erase earlier conversation messages."); Button("Erase all local conversations and memory", role: .destructive) { confirmErase = true }.disabled(!model.canChangeSessions) } }.navigationTitle("Settings") }.tabItem { Label("Settings", systemImage: "gearshape") }
+        }.tint(.cyan).safeAreaInset(edge: .top) {
+            if !model.error.isEmpty { Text(model.error).font(.footnote).foregroundStyle(.red).padding(8).frame(maxWidth: .infinity).background(.regularMaterial) }
+        }.confirmationDialog("Erase all local data?", isPresented: $confirmErase, titleVisibility: .visible) { Button("Erase all", role: .destructive) { model.eraseAll() }; Button("Cancel", role: .cancel) {} }
     }
 }

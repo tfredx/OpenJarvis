@@ -34,6 +34,41 @@ private actor ScriptedModel: Intelligence {
         catch { let state = await agent.snapshot(); XCTAssertEqual(state.status, .failed); XCTAssertTrue(state.notes.isEmpty) }
     }
 
+    func testNativeSessionCoordinatorKeepsMemoryAndHistorySeparate() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let c = try SessionCoordinator(root: dir, engine: ScriptedModel([.init("save_memory", "synthetic blue"), .init("reply", "saved"), .init("reply", "other")]),
+                                       bridge: NativeConversationBridge(), authorization: NativeToolAuthorization())
+        let first = c.activeID
+        try await c.submit("remember synthetic blue")
+        XCTAssertThrowsError(try c.create(title: "Blocked"))
+        try await c.approve(true)
+        try c.create(title: "Other"); let second = c.activeID
+        XCTAssertTrue(c.snapshot.notes.isEmpty)
+        try await c.submit("other synthetic")
+        try c.select(first); XCTAssertEqual(c.snapshot.notes.map(\.text), ["synthetic blue"])
+        try c.select(second); XCTAssertTrue(c.snapshot.notes.isEmpty)
+        XCTAssertFalse(c.snapshot.messages.contains { $0.text.contains("synthetic blue") })
+    }
+
+    func testNativeSessionRestartPreservesApprovalAndDenial() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let c = try SessionCoordinator(root: dir, engine: ScriptedModel([.init("save_memory", "synthetic")]),
+                                       bridge: NativeConversationBridge(), authorization: NativeToolAuthorization())
+        let first = c.activeID
+        try c.create(title: "Second"); let second = c.activeID
+        try await c.submit("remember synthetic")
+        let reopened = try SessionCoordinator(root: dir, engine: ScriptedModel([.init("save_memory", "synthetic"), .init("reply", "denied")]),
+                                              bridge: NativeConversationBridge(), authorization: NativeToolAuthorization())
+        XCTAssertEqual(reopened.activeID, second)
+        XCTAssertThrowsError(try reopened.select(first))
+        try await reopened.approve(false)
+        XCTAssertTrue(reopened.snapshot.notes.isEmpty)
+        XCTAssertEqual(reopened.snapshot.status, .complete)
+        try reopened.select(first); XCTAssertEqual(reopened.snapshot.status, .idle)
+    }
+
     func testNativeBridgeSelected() async throws {
         XCTAssertTrue(makeConversationBridge() is NativeConversationBridge)
         XCTAssertEqual(conversationBridgeLabel, "Upstream Rust conversation bridge")

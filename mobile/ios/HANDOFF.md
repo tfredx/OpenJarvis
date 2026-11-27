@@ -1,16 +1,9 @@
-# Current handoff — v0.3.1 session storage
+# Current handoff — v0.3.2 session coordinator and UI
 
-Date: 2026-11-26 ET. Base ios/main 3bd28cb697ced6574eb9e215434370e4450442e2. Upstream pin 556ddf32456bdf5c40195714a3385b339b5f98f9. PRs #1 and #5–#13 merged. Issues #3, #4 and #14 open; #2 closed.
+Date: 2026-11-26 ET. Base ios/main 422337e89ec876e777051e46470cad85303c1e7a; upstream 556ddf32456bdf5c40195714a3385b339b5f98f9. PRs #1, #5–#13, #15 merged. Issues #3, #4, #14 open.
 
-## Validated baseline
-Integrated run 45935060866 passed 21 Swift tests, 10 Rust tests, 8 hosted native tests; symbol checks, both ARM64 builds, XCFramework, Xcode links, archive integrity and artifact upload passed. Artifact 15170975527 is unsigned. This establishes v0.3.0 as an automated development baseline, not a signed/device-validated release.
+Validated PR #15: run 45936370068, 31 Swift, 10 Rust, 8 hosted tests, native compilation and artifact publication passed. Artifact 15171057055 unsigned. Integrated run 45937626321 in progress at inspection. No device evidence.
 
-## Current branch
-feat/ios-session-repository: versioned local session repository, separate atomic snapshots, resumable migration/creation/retirement, isolated memory, stored task-state guards and 10 new portable tests. No app wiring, no new permissions, no dependencies and no change to Rust policy. Local tests passed on earlier v0.2 portable fixture (26 total, 10 new). The two new Git blobs match tested bytes. Combined CI pending; expected 31 Swift, 10 Rust, 8 hosted. See docs/decisions/0004-session-storage.md.
+Branch feat/ios-session-coordinator: coordinator exclusive writer, task and persistence checks, native Sessions tab, confirmed deletion, all-session erase, Shortcut prefill gating, draft/speech clearing, version 0.3.2. Seven new portable and two hosted tests authored; expected 58 tests; no test pass claimed for new code until CI. See docs/decisions/0005-session-coordinator.md.
 
-## Continuation
-1. Inspect CI on this PR; require both mobile checks, actual test counts and artifact publication. Ruleset 28209245 still did not include mandatory checks on last inspection; owner must enable and verify. Physical baseline #4 remains open. Do not merge until CI green and physical baseline validated or owner explicitly defers.
-2. Add a single owner/session coordinator before connecting SessionRepository to the app. Block switching/deletion while executing; require discard or resolution of saved pending tasks; prevent stale Agent writes, clear stale draft state; handle recovery failure without reopening old state. Add native hosted tests and explicit UI confirmations.
-3. Preserve backup exclusion and file protection, verify legacy migration and erase-all on real device with synthetic data. Finish #14 only after these gates.
-4. Separately design SQLite/upstream SessionStore migration, preserving all Snapshot state. No cross-channel linking, global memory, auto-decay or cloud sync until scoped.
-5. Keep main as upstream mirror. Update handoff with actual evidence. No release tag, signing keys, user data or fabricated test claims.
+Next: check combined portable, Rust and native hosted tests, packaging and artifacts; fix first concrete error before merge. Verify required status checks are actually saved. Physical validation #4 remains open; install signed app, test real inference and legacy migration, session controls, pending approvals, memory isolation and all-session erase with synthetic data. Close #14 only after its acceptance criteria. Keep SQLite/semantic retrieval and upstream SessionStore integration separate. No release tag. Preserve main as upstream mirror.
