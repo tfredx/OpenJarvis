@@ -18,6 +18,13 @@ import XCTest
         let source = dir.appendingPathComponent("source")
         let scratch = dir.appendingPathComponent("scratch")
         try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: false)
+        let staleName = SQLiteMigrationJournal.stagePrefix + UUID().uuidString
+        let staleStage = scratch.appendingPathComponent(staleName, isDirectory: true)
+        try FileManager.default.createDirectory(at: staleStage, withIntermediateDirectories: false)
+        let staleFile = staleStage.appendingPathComponent("sessions.sqlite3")
+        try Data("synthetic interrupted database".utf8).write(to: staleFile)
+        let journal = scratch.appendingPathComponent(SQLiteMigrationJournal.journalName)
+        try JSONEncoder().encode(SQLiteMigrationJournal.Record(version: 1, stageDirectory: staleName)).write(to: journal)
         let c = try SessionCoordinator(root: source, engine: Scripted([
             .init("save_memory", "synthetic blue"), .init("reply", "saved"),
             .init("save_memory", "synthetic green"), .init("reply", "saved")
@@ -35,6 +42,50 @@ import XCTest
         XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: scratch.path).isEmpty)
         try await c.approve(true); XCTAssertEqual(c.snapshot.notes.map(\.text), ["synthetic green"])
         try c.select(first); XCTAssertEqual(c.snapshot.notes.map(\.text), ["synthetic blue"])
+    }
+
+    func testJournalRecoveryRemovesOnlyRecordedStage() throws {
+        let dir = try root(); defer { try? FileManager.default.removeItem(at: dir) }
+        let stageName = SQLiteMigrationJournal.stagePrefix + UUID().uuidString
+        let stage = dir.appendingPathComponent(stageName, isDirectory: true)
+        let unrelated = dir.appendingPathComponent("unrelated", isDirectory: true)
+        try FileManager.default.createDirectory(at: stage, withIntermediateDirectories: false)
+        try FileManager.default.createDirectory(at: unrelated, withIntermediateDirectories: false)
+        let marker = stage.appendingPathComponent("marker")
+        let retained = unrelated.appendingPathComponent("keep")
+        try Data("stage".utf8).write(to: marker)
+        try Data("keep".utf8).write(to: retained)
+        try JSONEncoder().encode(SQLiteMigrationJournal.Record(version: 1, stageDirectory: stageName))
+            .write(to: dir.appendingPathComponent(SQLiteMigrationJournal.journalName))
+
+        try SQLiteMigrationJournal.recover(in: dir)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: stage.path))
+        XCTAssertEqual(try Data(contentsOf: retained), Data("keep".utf8))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent(SQLiteMigrationJournal.journalName).path))
+    }
+
+    func testJournalRecoveryFailsClosedOnCorruptOrUntrackedState() throws {
+        let dir = try root(); defer { try? FileManager.default.removeItem(at: dir) }
+        let stageName = SQLiteMigrationJournal.stagePrefix + UUID().uuidString
+        let stage = dir.appendingPathComponent(stageName, isDirectory: true)
+        try FileManager.default.createDirectory(at: stage, withIntermediateDirectories: false)
+        let marker = stage.appendingPathComponent("marker")
+        let markerBytes = Data("preserve".utf8)
+        try markerBytes.write(to: marker)
+        let journal = dir.appendingPathComponent(SQLiteMigrationJournal.journalName)
+        try Data("not-json".utf8).write(to: journal)
+
+        XCTAssertThrowsError(try SQLiteMigrationJournal.recover(in: dir)) {
+            XCTAssertEqual($0 as? SQLiteMigrationError, .invalidJournal)
+        }
+        XCTAssertEqual(try Data(contentsOf: marker), markerBytes)
+
+        try FileManager.default.removeItem(at: journal)
+        XCTAssertThrowsError(try SQLiteMigrationJournal.recover(in: dir)) {
+            XCTAssertEqual($0 as? SQLiteMigrationError, .untrackedStage)
+        }
+        XCTAssertEqual(try Data(contentsOf: marker), markerBytes)
     }
     func testExportRejectsExternalCatalogAndOrphanedSnapshot() async throws {
         let dir = try root(); defer { try? FileManager.default.removeItem(at: dir) }
