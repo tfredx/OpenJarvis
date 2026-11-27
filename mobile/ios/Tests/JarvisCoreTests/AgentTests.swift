@@ -48,7 +48,7 @@ private struct FixedMemoryDistance: MemorySemanticMatcher {
         _ = try await a.start("Remember blue"); let s = try await a.approve(true); let r = try await a.deleteMemory(s.notes[0].id); XCTAssertTrue(r.notes.isEmpty)
     }
     func testTimeTool() async throws {
-        let a = try Agent(engine: Scripted([.init("current_time", ""), .init("reply", "done")]), file: path()); let s = try await a.start("time"); XCTAssertEqual(s.messages.map(\.role), ["user", "tool", "assistant"])
+        let a = try Agent(engine: Scripted([.init("current_time", ""), .init("reply", "done")]), fi…2 tokens truncated…()); let s = try await a.start("time"); XCTAssertEqual(s.messages.map(\.role), ["user", "tool", "assistant"])
     }
     func testRepeatedDeniedWriteIsBlocked() async throws {
         let a = try Agent(engine: Scripted([.init("save_memory", "secret"), .init("save_memory", "secret"), .init("reply", "No write")]), file: path())
@@ -88,12 +88,20 @@ private struct FixedMemoryDistance: MemorySemanticMatcher {
         XCTAssertEqual(result.status, .complete)
     }
     func testMemoryAccessDenialStillAllowsNonMemoryTool() async throws {
-        let a = try Agent(engine: Scripted([.init("current_time", ""), .init("reply", "done")]), file: path())
+        let f = path(); try FileManager.default.createDirectory(at: f.deletingLastPathComponent(), withIntermediateDirectories: true)
+        var seeded = Snapshot(); seeded.messages = [Message("user", "Old conversation memory marker")]
+        try JSONEncoder().encode(seeded).write(to: f)
+        let engine = RecordingIntelligence([.init("current_time", ""), .init("reply", "done")])
+        let a = try Agent(engine: engine, file: f)
         let s = try await a.start("What time is it? Do not use memory.")
         XCTAssertEqual(s.status, .complete)
         XCTAssertTrue(s.messages.contains(where: { $0.role == "tool" }))
         XCTAssertEqual(s.memoryAccessDenied, true)
         XCTAssertNotEqual(s.toolUseDenied, true)
+        let prompts = await engine.recordedPrompts()
+        XCTAssertFalse(prompts[0].contains("Old conversation memory marker"))
+        XCTAssertFalse(prompts[1].contains("Old conversation memory marker"))
+        XCTAssertTrue(prompts[1].contains("\"role\":\"tool\""))
     }
     func testOlderSnapshotDecodesWithoutPerTaskPolicies() throws {
         let old = Data(#"{"messages":[],"notes":[],"status":"idle","pending":null,"steps":0}"#.utf8)

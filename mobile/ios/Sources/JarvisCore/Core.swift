@@ -94,10 +94,15 @@ public actor Agent {
                 let latest = state.messages.last(where: { $0.role == "user" })?.text ?? ""
                 let relevant = permits("search_memory") && state.toolUseDenied != true && state.memoryAccessDenied != true
                     ? Array(search(latest).prefix(3)).map(\.text) : []
-                // A request that prohibits memory must not receive persisted conversation history either.
-                // Keep only the current user turn as model context for that task.
-                let taskMessages = state.memoryAccessDenied == true || state.toolUseDenied == true
-                    ? Array(state.messages.suffix(1)) : Array(state.messages.suffix(32))
+                // A request that prohibits memory must not receive prior conversation history.
+                // Keep the current user turn and its tool results so permitted tools still work.
+                let taskMessages: [Message]
+                if state.memoryAccessDenied == true || state.toolUseDenied == true,
+                   let currentUserIndex = state.messages.lastIndex(where: { $0.role == "user" }) {
+                    taskMessages = Array(state.messages[currentUserIndex...])
+                } else {
+                    taskMessages = Array(state.messages.suffix(32))
+                }
                 let history = try taskMessages.map { message -> WireMessage in
                     guard let role = WireMessage.Role(rawValue: message.role) else { throw BridgeError.invalidRole }
                     return WireMessage(role: role, content: String(message.text.prefix(1000)))
