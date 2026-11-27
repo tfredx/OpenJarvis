@@ -28,3 +28,25 @@ targets:
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) REQUIRE_RUST_BRIDGE"
         TARGETED_DEVICE_FAMILY: '1'
         CODE_SIGN_STYLE: Automatic
+  OpenJarvisMobileTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: OpenJarvisMobile
+      - package: JarvisCore
+        product: JarvisCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.openjarvis.mobileprototype.tests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 6.0
+schemes:
+  OpenJarvisMobile:
+    build:
+      targets:
+        OpenJarvisMobile: all
+        OpenJarvisMobileTests: [test]
+    test:
+      targets:
+        - OpenJarvisMobileTests

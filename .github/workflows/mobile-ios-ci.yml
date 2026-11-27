@@ -85,6 +85,8 @@ jobs:
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 \
             -configuration Debug CODE_SIGNING_ALLOWED=NO \
             -derivedDataPath .ios-build/simulator build 2>&1 | tee audit/xcode-simulator.log
+      - name: Run hosted native integration tests
+        run: ./scripts/test-native-integration.sh
       - name: Record resolved lockfile hash
         if: always()
         run: |
