@@ -1,0 +1,7 @@
+# CI validation hardening (issue #3)
+
+Base: 79cbe01830842ad96297285f91c92d9a13507edc. Upstream pin: 556ddf32456bdf5c40195714a3385b339b5f98f9. PRs #6 and #7 merged; issue #2 closed. First integrated run: https://github.com/tfredx/OpenJarvis/actions/runs/45931139897. Portable job 140283783381 succeeded: Swift 6.4.3, 16 XCTest tests, 0 failures. Earlier CI run 45930976418 also passed 16 portable tests; its native job was skipped, not passed. The integrated native job 140283989915 was in progress at last observation, prerequisites step active; no native pass or failure claimed.
+
+This change removes the bootstrap skip path. The portable gate now explicitly requires native source; the native job runs after portable success. Retains public synthetic CI diagnostics and generated Cargo.lock (14 days), with read-only permissions and verified action SHA pins. No signing credentials or user data. Logs and lockfile are artifacts, not source commits. Xcode build commands retain pipefail. No runtime test claims for this workflow change until actual runs complete.
+
+Next: inspect the original integrated native run and this PR's checks. Fix the first concrete failure, recover and review the generated lockfile from artifacts, pin exact toolchains, and make --locked fail if missing; update HANDOFF.md. Do not merge if CI fails. Require actual observed checks in ios/main ruleset after successful run. Physical device validation remains issue #4. No release tag.
