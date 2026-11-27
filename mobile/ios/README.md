@@ -15,3 +15,5 @@ This requires the committed Cargo.lock and pinned Rust 1.100.0 toolchain, tests 
 The audit checks the upstream pinned crates against both Apple targets. It requires network and Apple SDK.
 
 Read AGENTS.md, HANDOFF.md, ROADMAP.md, docs/validation and architecture decision records. No secrets or real personal data in this public repository. Source under repository Apache-2.0 license.
+
+See [device installation and validation](docs/DEVICE_INSTALL.md) for developer signing, CI build artifacts and the physical-device gate.
