@@ -25,6 +25,13 @@ jobs:
         run: swift --version
       - name: Validate build scripts and symbol checks
         run: ./scripts/test-build-scripts.sh
+      - name: Verify system SQLite development headers
+        run: |
+          if ! pkg-config --exists sqlite3; then
+            sudo apt-get update
+            sudo apt-get install -y libsqlite3-dev pkg-config
+          fi
+          pkg-config --modversion sqlite3
       - name: Run portable tests
         run: |
           set -o pipefail
