@@ -23,6 +23,8 @@ jobs:
           persist-credentials: false
       - name: Record toolchain
         run: swift --version
+      - name: Validate build scripts and symbol checks
+        run: ./scripts/test-build-scripts.sh
       - name: Run portable tests
         run: |
           set -o pipefail

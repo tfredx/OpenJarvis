@@ -1,0 +1,5 @@
+# Native packaging regression — PR #12
+
+Base 184e8b459907d409ce164a2cadc1fd36756102d9. Run 45934437478, job 140294816216: 10 Rust tests, 0 failures; both ARM64 release builds finished. Portable job 140294286278: 21 tests, 0 failures. Native job failed before XCFramework generation: line 40 TEMP: unbound variable. On inspection, prior string substitution expanded the replacement suffix into two grep lines, duplicating the packaging block. This was an implementation error in PR #12, not a policy-test failure.
+
+Reconstructed packaging tail from the successfully validated 3b209e9121b64edacfce8cca3f58930af1efccff script while retaining pinned upstream hash and locked toolchain changes. Replaced fragile inline checks with an exact code-symbol verifier (all three exports, defined text symbols) and added portable syntax, missing/lookalike/undefined-symbol and packaging-structure regression checks. No weakening of native gates or changes to policy. Actual CI validation still required. Previous stable artifact: run 45932697497, 15169941661. Do not merge if any check fails.

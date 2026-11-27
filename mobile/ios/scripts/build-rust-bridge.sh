@@ -36,33 +36,7 @@ for target in aarch64-apple-ios aarch64-apple-ios-sim; do
   # Xcode 27.1 nm cannot read LLVM 23 Rust archive metadata; use the producer's reader.
   # This does not replace the later Apple linker validation.
   "$NM" --extern-only --defined-only --no-demangle "$CARGO_TARGET_DIR/$target/release/libopenjarvis_mobile_bridge.a" > "$ROOT/audit/symbols-$target.txt" 2> "$ROOT/audit/symbols-$target.stderr.log"
-  grep -Eq '[[:space:]]_oj_window_json$' "$ROOT/audit/symbols-$target.txt"
-  grep -Eq '[[:space:]]_oj_string_free
-done
-OUTPUT="$ROOT/ios/Frameworks/OpenJarvisBridge.xcframework"
-TEMP=$(mktemp -d)
-trap 'rm -rf "$TEMP"' EXIT
-xcodebuild -create-xcframework \
- -library "$CARGO_TARGET_DIR/aarch64-apple-ios/release/libopenjarvis_mobile_bridge.a" -headers "$ROOT/bridge/include" \
- -library "$CARGO_TARGET_DIR/aarch64-apple-ios-sim/release/libopenjarvis_mobile_bridge.a" -headers "$ROOT/bridge/include" \
- -output "$TEMP/OpenJarvisBridge.xcframework" 2>&1 | tee "$ROOT/audit/xcframework.log"
-rm -rf "$OUTPUT"
-mv "$TEMP/OpenJarvisBridge.xcframework" "$OUTPUT"
-printf 'Built %s; app linking/device test still required.\n' "$OUTPUT"
- "$ROOT/audit/symbols-$target.txt"
-  grep -Eq '[[:space:]]_oj_authorize_action_json
-done
-OUTPUT="$ROOT/ios/Frameworks/OpenJarvisBridge.xcframework"
-TEMP=$(mktemp -d)
-trap 'rm -rf "$TEMP"' EXIT
-xcodebuild -create-xcframework \
- -library "$CARGO_TARGET_DIR/aarch64-apple-ios/release/libopenjarvis_mobile_bridge.a" -headers "$ROOT/bridge/include" \
- -library "$CARGO_TARGET_DIR/aarch64-apple-ios-sim/release/libopenjarvis_mobile_bridge.a" -headers "$ROOT/bridge/include" \
- -output "$TEMP/OpenJarvisBridge.xcframework" 2>&1 | tee "$ROOT/audit/xcframework.log"
-rm -rf "$OUTPUT"
-mv "$TEMP/OpenJarvisBridge.xcframework" "$OUTPUT"
-printf 'Built %s; app linking/device test still required.\n' "$OUTPUT"
- "$ROOT/audit/symbols-$target.txt"
+  "$ROOT/scripts/verify-bridge-symbols.sh" "$ROOT/audit/symbols-$target.txt"
 done
 OUTPUT="$ROOT/ios/Frameworks/OpenJarvisBridge.xcframework"
 TEMP=$(mktemp -d)
