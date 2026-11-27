@@ -19,8 +19,8 @@ NM="$SYSROOT/lib/rustlib/$HOST/bin/llvm-nm"
 [[ -n "$HOST" && -x "$NM" ]] || { echo "Matching Rust llvm-nm not found: $NM" >&2; exit 1; }
 "$NM" --version | tee "$ROOT/audit/llvm-nm-version.txt"
 export CARGO_TARGET_DIR="$ROOT/bridge/target"
-# Cargo.lock is generated on the first run. Retain it in the fork for later reproducibility.
-if [[ ! -f Cargo.lock ]]; then cargo +"$TOOLCHAIN" generate-lockfile; fi
+# Lockfile is checked in; missing or changed dependency resolution is a hard failure.
+[[ -f Cargo.lock ]] || { echo "Missing bridge/Cargo.lock; restore reviewed lockfile." >&2; exit 1; }
 cargo +"$TOOLCHAIN" test --locked 2>&1 | tee "$ROOT/audit/bridge-host-test.log"
 export IPHONEOS_DEPLOYMENT_TARGET=27.0
 for target in aarch64-apple-ios aarch64-apple-ios-sim; do

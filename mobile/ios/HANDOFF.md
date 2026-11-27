@@ -6,14 +6,14 @@ Current branch fix/ios-rust-symbol-verification.
 
 ## Evidence
 - Run 45931139897 passed 16 portable Swift tests, 3 Rust host tests and both ARM64 Rust release cross-builds. Xcode 27.1 initialized. The native job was cancelled after Apple nm reported LLVM metadata incompatibilities. No successful symbol, XCFramework or app link gate.
-- PR #8 diagnostics retention merged; its portable job and artifact upload passed. Native runs 45931291104 and 45931375008 still in progress when checked.
+- PR #8 diagnostics retention merged; its portable job and artifact upload passed. Native run 45931291104 reproduced the Apple nm failure (exit 1), and uploaded diagnostic artifact 15168712835. Run 45931375008 was still in progress at last observation.
 - See docs/validation/native-toolchain-compatibility.md for exact failure, evidence and proposed fix.
 
 ## Next actions
 1. Review this branch's CI and prior native jobs. Do not merge until portable and native checks succeed. If nm succeeds but Apple linking fails, diagnose that separately rather than skipping the gate.
-2. Recover Cargo.lock from native artifact; verify against artifact/run provenance, review and commit it, require --locked without regeneration, pin XcodeGen. Record actual toolchain versions.
+2. Cargo.lock recovered from artifact 15168712835, exact hash verified and committed; bridge script now fails if absent. Verify locked build in CI, pin XcodeGen after confirming installation method (observed 2.48.0).
 3. Confirm both Xcode unsigned builds, add real simulator integration tests and require observed CI checks in ios/main ruleset. Issue #3 remains open.
 4. Physical iPhone signed deployment and real Apple Foundation Models test (issue #4): permissions, approvals, persistence, restart, cancellation, unavailable model, Shortcut prefill.
 5. Only after native validation proceed with upstream security/session migration. Keep source and docs scoped; no secrets or personal data.
 
-Limitations: This fix is not yet CI-tested; Cargo.lock and native link/device results not yet available. No feature expansion or release.
+Limitations: This fix is not yet CI-tested; Cargo.lock recovered and committed; native link/device results not yet available. No feature expansion or release.

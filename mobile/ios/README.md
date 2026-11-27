@@ -8,7 +8,7 @@ Install Xcode 27 (select its developer directory), XcodeGen and rustup. From mob
 swift test
 ./scripts/setup-ios.sh --native
 ```
-This generates a Cargo.lock if absent (retain it in a follow-up PR), tests the bridge, builds arm64 device/simulator static libraries, verifies symbols, creates the XCFramework and attempts unsigned builds. Then select a personal signing team and device in Xcode. No cloud API key is required. The separate --swift-only mode is a diagnostic baseline, not proof of native Rust integration.
+This requires the committed Cargo.lock and pinned Rust 1.100.0 toolchain, tests the bridge, builds arm64 device/simulator static libraries, verifies symbols, creates the XCFramework and attempts unsigned builds. Then select a personal signing team and device in Xcode. No cloud API key is required. The separate --swift-only mode is a diagnostic baseline, not proof of native Rust integration.
 ```sh
 ./scripts/audit-upstream.sh
 ```
