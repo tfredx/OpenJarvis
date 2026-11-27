@@ -1,16 +1,17 @@
-# Current handoff — first native build succeeded
+# Current handoff — native build distribution
 
-Date: 2026-11-26 ET. Stage: v0.2.1 native build validated on PR #9; simulator runtime tests proposed. No release tag.
-Fork tfredx/OpenJarvis, integration ios/main d8b47c2a0e4d0815af6100f01176671718e41d1e; upstream pin 556ddf32456bdf5c40195714a3385b339b5f98f9. PRs #1, #5, #6, #7, #8, #9 merged. Issue #2 closed, #3 and #4 open.
+Date: 2026-11-26 ET. Stage: v0.2.2 simulator validation pending, packaging proposal. No release tag.
+Fork tfredx/OpenJarvis; upstream pin 556ddf32456bdf5c40195714a3385b339b5f98f9; ios/main base 17965e4b7f8121bcd57ff1570d1d4b55c4592810. PRs #1, #5–#10 merged. Issue #2 closed; #3 and #4 open. Current branch build/ios-native-artifacts.
 
 ## Evidence
-Run 45931605877: 16 Swift tests, 3 Rust host tests, both ARM64 cross-builds, symbol check, XCFramework, both unsigned Xcode builds passed. Xcode 27.1, Rust 1.100.0, XcodeGen 2.48.0. Lockfile hash unchanged. Integrated branch run 45931908100 in progress at first observation. See docs/validation/native-integration.md.
+PR #9 run 45931605877 passed 16 portable tests, 3 Rust host tests, both ARM64 cross-builds, symbols, XCFramework and unsigned Xcode device/simulator builds. PR #10 runs 45932108318 and 45932210379 passed portable jobs; native jobs still in progress when checked. No hosted simulator test pass yet. Branch rules currently require PR but not status checks.
 
 ## Current change
-Branch test/ios-native-integration: six hosted native tests, XcodeGen native test target and explicit scheme, simulator selection/CI runner, results retained. No runtime feature changes. Real Foundation Models inference not tested; deterministic engine used. CI not yet passed for this change.
+Add verified unsigned device and simulator ZIP artifacts after native hosted tests, build manifest/checksums and device-installation guide. No runtime changes. No new test results or packaged artifacts claimed until CI completes. See docs/validation/native-artifacts.md.
 
-## Next actions
-1. Inspect this PR's portable and native job logs; verify six hosted tests actually execute. Fix simulator/test-target failures without removing native tests. Merge only after both checks pass.
-2. Configure required check names Mobile portable Swift tests and Mobile native iOS build on ios/main ruleset (owner action); keep zero mandatory reviewer approvals. Pin XcodeGen and consider runner version controls; verify dependency audit independently. Issue #3 closes after acceptance.
-3. Issue #4: signed physical iPhone install, model availability, offline inference, memory approval/denial and restart, cancellation, Shortcut prefill and privacy behavior. Record observed evidence, never personal content.
-4. After physical baseline, plan native security/session integration; existing agent orchestration is Swift, not upstream Rust. Keep main untouched and record every change via PR.
+## Next steps
+1. Inspect actual native jobs for PR #10 and this branch; if any hosted tests fail, fix first concrete error in scoped PR. Require both CI jobs and observed six hosted tests before merge.
+2. Confirm unsigned artifact archive/manifest upload and checksum; do not represent as signed installable IPA.
+3. Owner enables required status checks Mobile portable Swift tests and Mobile native iOS build on ios/main; verify ruleset. Pin XcodeGen and audit dependencies. Issue #3 remains open.
+4. Follow docs/DEVICE_INSTALL.md and issue #4 on Mac/iPhone; record actual synthetic device validation. Do not expand runtime until validated.
+5. Then scope upstream security/session management. Keep main untouched; each PR updates this handoff.
