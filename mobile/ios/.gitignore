@@ -1,0 +1,8 @@
+.build/
+.ios-build/
+ios/*.xcodeproj/
+upstream/
+audit/
+.DS_Store
+bridge/target/
+ios/Frameworks/
