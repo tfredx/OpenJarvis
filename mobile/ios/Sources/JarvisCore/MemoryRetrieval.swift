@@ -41,7 +41,7 @@ enum MemoryRetrieval {
         notes: [Note],
         semanticDistance: (String, String) -> Double? = { _, _ in nil }
     ) -> [Note] {
-        let queryTerms = Set(tokens(query).filter { !stopWords.contains($0) })
+        let queryTerms = Set(tokens(query).filter { $0.count > 2 && !stopWords.contains($0) })
         guard !queryTerms.isEmpty else { return [] }
 
         return notes.enumerated().compactMap { index, note -> (note: Note, score: Double, recency: Int)? in
