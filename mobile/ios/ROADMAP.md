@@ -3,7 +3,7 @@
 | Milestone | Exit condition | Status |
 | --- | --- | --- |
 | v0.2.1 | Governance merged; baseline imported; CI configured and observable | Complete |
-| v0.3.0 | Native Rust bridge compiles/links; security and sessions scoped after validation | CI complete; physical-device runtime gate remains open |
+| v0.3.0 | Native Rust bridge compiles/links; security and sessions scoped after validation | CI complete; physical-device execution started, with memory/context failures under investigation |
 | v0.3.1 | Isolated session storage, task-safe native UI, migration and device tests | Partial: isolated sessions and hosted tests pass; on-device persistence and migration remain unverified |
 | v0.4.0 | Versioned SQLite migration and retrieval tests | Partial: SQLite archive foundation is tested; live migration and retrieval are not wired |
 | v0.4.1 | Shadow migration rehearsal preserves source bytes; interruption recovery is journaled and fails closed | Complete in CI; JSON remains authoritative, no live cutover |
@@ -13,13 +13,17 @@
 | v0.7.0 | Checkpointed background workflows, measured device limits | Not started |
 | v0.8.0 | Additional local models and compute routing | Not started |
 | v0.9.0 | Learning and optional Mac companion | Not started |
-| v1.0.0 | Release criteria met on physical devices | Not started; physical-device installation/runtime validation remains open |
+| v1.0.0 | Release criteria met on physical devices | Not started; physical-device acceptance is partial and includes unresolved memory/context failures |
 
 ## Validation and release packaging
 
-Owner-reported local Mac evidence (2026-11-27): Xcode 27.2, XcodeGen and Rust configured; 55 Swift core tests passed; simulator and physical-device compilation and unsigned IPA packaging succeeded. The tested commit/logs were not supplied, so this is not attributed to a specific integration SHA. Physical-device installation/runtime behavior remain unverified.
+Owner-reported local Mac evidence (2026-11-27): Xcode 27.2, XcodeGen and Rust configured; 55 Swift core tests passed; simulator and physical-device compilation and unsigned IPA packaging succeeded. The tested commit/logs were not supplied, so this is not attributed to a specific integration SHA.
 
-PR #20 added the existing repository security audit as a required CI dependency and validated both arm64 iPhoneOS and simulator compilation, hosted iOS simulator integration tests, IPA packaging and development-artifact upload. PR run 46070616432 and integrated `ios/main` run 46072060277 passed. Integrated workflow run 46072060277 uploaded development artifact 15233712034. Its checksummed IPA is unsigned and reports `physical_device_tested: false`.
+Owner-reported physical-device diagnostic execution (2026-11-27): four basic generation prompts passed; “Explain how a seed grows. Do not use tools or memory.” failed; six targeted semantic-memory prompts failed. Exact device/OS, commit and logs/timings were not supplied. See `docs/validation/physical-memory-diagnostics.md`. This is partial physical-device evidence and does not establish performance or complete v1.0 acceptance.
+
+PR #20 added the existing repository security audit as a required CI dependency and validated both arm64 iPhoneOS and simulator compilation, hosted iOS simulator integration tests, IPA packaging and development-artifact upload. PR run 46070616432 and integrated `ios/main` run 46072060277 passed. PR #21 run 46073658513 and integrated run 46074641626 passed all seven jobs. Integrated workflow run 46072060277 uploaded development artifact 15233712034. Its checksummed IPA is unsigned and reports `physical_device_tested: false`; it predates the later owner-reported device execution.
+
+PR #22's first portable CI run 46079296252 failed a weak semantic-match regression because a single-letter article caused a false lexical overlap; the implementation now discards tokens of two characters or fewer. Corrected code run 46079501679 passed all seven jobs: 62 portable Swift tests, 10 Rust bridge tests/cross-build, 11 hosted native integration tests, security audits, unsigned arm64 iPhoneOS and simulator builds, and IPA packaging/upload (artifact 15236438029). Review then caught that one implementation discarded allowed tool results for memory-denied tasks; current code retains current-task results while excluding prior conversation. The latest full run 46081141460 passed at the documentation-only head. Run complete CI on the current code head before merge, then verify integrated `ios/main` CI.
 
 Only a valid `ios-vX.Y.Z` tag pointing into `ios/main` enters the versioned release-artifact path. Tag-derived versioning and 90-day artifact retention are implemented but not exercised because no release tag was requested or created. Tagging does not create a signed, App Store or production release. Ordinary CI artifacts remain short-lived. Never equate compilation or simulator tests with device execution.
 
