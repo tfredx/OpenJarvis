@@ -64,8 +64,6 @@ jobs:
           xcrun --sdk iphonesimulator --show-sdk-version
           swift --version
           rustup --version
-          rustup toolchain install stable --profile minimal
-          cargo +stable --version | tee audit/cargo-version.txt
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen --version | tee audit/xcodegen-version.txt
       - name: Run upstream bridge host tests and cross-build
