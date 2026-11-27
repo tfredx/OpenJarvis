@@ -48,7 +48,7 @@ private struct FixedMemoryDistance: MemorySemanticMatcher {
         _ = try await a.start("Remember blue"); let s = try await a.approve(true); let r = try await a.deleteMemory(s.notes[0].id); XCTAssertTrue(r.notes.isEmpty)
     }
     func testTimeTool() async throws {
-        let a = try Agent(engine: Scripted([.init("current_time", ""), .init("reply", "done")]), fi…2 tokens truncated…()); let s = try await a.start("time"); XCTAssertEqual(s.messages.map(\.role), ["user", "tool", "assistant"])
+        let a = try Agent(engine: Scripted([.init("current_time", ""), .init("reply", "done")]), file: path()); let s = try await a.start("time"); XCTAssertEqual(s.messages.map(\.role), ["user", "tool", "assistant"])
     }
     func testRepeatedDeniedWriteIsBlocked() async throws {
         let a = try Agent(engine: Scripted([.init("save_memory", "secret"), .init("save_memory", "secret"), .init("reply", "No write")]), file: path())
