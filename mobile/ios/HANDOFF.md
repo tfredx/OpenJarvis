@@ -1,19 +1,16 @@
-# Current handoff — native toolchain compatibility
+# Current handoff — first native build succeeded
 
-Date: 2026-11-26 ET. Stage: v0.2.1 integrated native CI; no release tag.
-Fork tfredx/OpenJarvis; upstream pin 556ddf32456bdf5c40195714a3385b339b5f98f9. Base ios/main b17f0b330e654667d6bf818d082ee159276ef627; main unchanged. PRs #1, #5, #6, #7, #8 merged. Issue #2 closed; #3 and #4 open.
-Current branch fix/ios-rust-symbol-verification.
+Date: 2026-11-26 ET. Stage: v0.2.1 native build validated on PR #9; simulator runtime tests proposed. No release tag.
+Fork tfredx/OpenJarvis, integration ios/main d8b47c2a0e4d0815af6100f01176671718e41d1e; upstream pin 556ddf32456bdf5c40195714a3385b339b5f98f9. PRs #1, #5, #6, #7, #8, #9 merged. Issue #2 closed, #3 and #4 open.
 
 ## Evidence
-- Run 45931139897 passed 16 portable Swift tests, 3 Rust host tests and both ARM64 Rust release cross-builds. Xcode 27.1 initialized. The native job was cancelled after Apple nm reported LLVM metadata incompatibilities. No successful symbol, XCFramework or app link gate.
-- PR #8 diagnostics retention merged; its portable job and artifact upload passed. Native run 45931291104 reproduced the Apple nm failure (exit 1), and uploaded diagnostic artifact 15168712835. Run 45931375008 was still in progress at last observation.
-- See docs/validation/native-toolchain-compatibility.md for exact failure, evidence and proposed fix.
+Run 45931605877: 16 Swift tests, 3 Rust host tests, both ARM64 cross-builds, symbol check, XCFramework, both unsigned Xcode builds passed. Xcode 27.1, Rust 1.100.0, XcodeGen 2.48.0. Lockfile hash unchanged. Integrated branch run 45931908100 in progress at first observation. See docs/validation/native-integration.md.
+
+## Current change
+Branch test/ios-native-integration: six hosted native tests, XcodeGen native test target and explicit scheme, simulator selection/CI runner, results retained. No runtime feature changes. Real Foundation Models inference not tested; deterministic engine used. CI not yet passed for this change.
 
 ## Next actions
-1. Review this branch's CI and prior native jobs. Do not merge until portable and native checks succeed. If nm succeeds but Apple linking fails, diagnose that separately rather than skipping the gate.
-2. Cargo.lock recovered from artifact 15168712835, exact hash verified and committed; bridge script now fails if absent. Verify locked build in CI, pin XcodeGen after confirming installation method (observed 2.48.0).
-3. Confirm both Xcode unsigned builds, add real simulator integration tests and require observed CI checks in ios/main ruleset. Issue #3 remains open.
-4. Physical iPhone signed deployment and real Apple Foundation Models test (issue #4): permissions, approvals, persistence, restart, cancellation, unavailable model, Shortcut prefill.
-5. Only after native validation proceed with upstream security/session migration. Keep source and docs scoped; no secrets or personal data.
-
-Limitations: This fix is not yet CI-tested; Cargo.lock recovered and committed; native link/device results not yet available. No feature expansion or release.
+1. Inspect this PR's portable and native job logs; verify six hosted tests actually execute. Fix simulator/test-target failures without removing native tests. Merge only after both checks pass.
+2. Configure required check names Mobile portable Swift tests and Mobile native iOS build on ios/main ruleset (owner action); keep zero mandatory reviewer approvals. Pin XcodeGen and consider runner version controls; verify dependency audit independently. Issue #3 closes after acceptance.
+3. Issue #4: signed physical iPhone install, model availability, offline inference, memory approval/denial and restart, cancellation, Shortcut prefill and privacy behavior. Record observed evidence, never personal content.
+4. After physical baseline, plan native security/session integration; existing agent orchestration is Swift, not upstream Rust. Keep main untouched and record every change via PR.
