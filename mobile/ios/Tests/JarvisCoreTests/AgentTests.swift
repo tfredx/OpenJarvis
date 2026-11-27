@@ -4,6 +4,21 @@ actor Scripted: Intelligence {
     var decisions: [Decision]; init(_ d: [Decision]) { decisions = d }
     func decide(prompt: String) async throws -> Decision { guard !decisions.isEmpty else { throw AgentError.invalidDecision }; return decisions.removeFirst() }
 }
+private actor RecordingIntelligence: Intelligence {
+    private var decisions: [Decision]
+    private var prompts: [String] = []
+    init(_ decisions: [Decision]) { self.decisions = decisions }
+    func decide(prompt: String) async throws -> Decision {
+        prompts.append(prompt)
+        guard !decisions.isEmpty else { throw AgentError.invalidDecision }
+        return decisions.removeFirst()
+    }
+    func recordedPrompts() -> [String] { prompts }
+}
+private struct FixedMemoryDistance: MemorySemanticMatcher {
+    let value: Double?
+    func distance(query: String, note: String) -> Double? { value }
+}
 @MainActor final class AgentTests: XCTestCase {
     func path() -> URL { FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("state.json") }
     func testReplyAndReload() async throws {
@@ -48,5 +63,42 @@ actor Scripted: Intelligence {
     func testEraseAll() async throws {
         let f = path(); let a = try Agent(engine: Scripted([.init("reply", "answer")]), file: f); _ = try await a.start("private request"); _ = try await a.eraseAll()
         let b = try Agent(engine: Scripted([]), file: f); let s = await b.snapshot(); XCTAssertTrue(s.messages.isEmpty); XCTAssertTrue(s.notes.isEmpty); XCTAssertEqual(s.status, .idle)
+    }
+    func testExplicitNoToolsOrMemorySuppressesContextAndBlocksActions() async throws {
+        let f = path(); try FileManager.default.createDirectory(at: f.deletingLastPathComponent(), withIntermediateDirectories: true)
+        var seeded = Snapshot()
+        seeded.messages = [Message("user", "Old conversation memory marker")]
+        seeded.notes = [Note("Sensitive synthetic seed memory marker")]
+        try JSONEncoder().encode(seeded).write(to: f)
+        let engine = RecordingIntelligence([.init("search_memory", "seed"), .init("reply", "A seed grows through germination.")])
+        let agent = try Agent(engine: engine, file: f, memoryMatcher: FixedMemoryDistance(value: 0))
+
+        let result = try await agent.start("Explain how a seed grows. Do not use tools or memory.")
+
+        let prompts = await engine.recordedPrompts()
+        XCTAssertEqual(prompts.count, 2)
+        XCTAssertTrue(prompts[0].contains("Only action allowed for this task: reply"))
+        XCTAssertFalse(prompts[0].contains("Sensitive synthetic seed memory marker"))
+        XCTAssertFalse(prompts[0].contains("Old conversation memory marker"))
+        XCTAssertFalse(prompts[1].contains("Sensitive synthetic seed memory marker"))
+        XCTAssertFalse(prompts[1].contains("Old conversation memory marker"))
+        XCTAssertFalse(result.messages.contains(where: { $0.role == "tool" }))
+        XCTAssertTrue(result.messages.contains(where: { $0.role == "system" && $0.text.contains("Tool action blocked") }))
+        XCTAssertEqual(result.notes.map(\.text), ["Sensitive synthetic seed memory marker"])
+        XCTAssertEqual(result.status, .complete)
+    }
+    func testMemoryAccessDenialStillAllowsNonMemoryTool() async throws {
+        let a = try Agent(engine: Scripted([.init("current_time", ""), .init("reply", "done")]), file: path())
+        let s = try await a.start("What time is it? Do not use memory.")
+        XCTAssertEqual(s.status, .complete)
+        XCTAssertTrue(s.messages.contains(where: { $0.role == "tool" }))
+        XCTAssertEqual(s.memoryAccessDenied, true)
+        XCTAssertNotEqual(s.toolUseDenied, true)
+    }
+    func testOlderSnapshotDecodesWithoutPerTaskPolicies() throws {
+        let old = Data(#"{"messages":[],"notes":[],"status":"idle","pending":null,"steps":0}"#.utf8)
+        let snapshot = try JSONDecoder().decode(Snapshot.self, from: old)
+        XCTAssertNil(snapshot.toolUseDenied)
+        XCTAssertNil(snapshot.memoryAccessDenied)
     }
 }
