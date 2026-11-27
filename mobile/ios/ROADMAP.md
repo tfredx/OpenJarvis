@@ -4,6 +4,7 @@
 | --- | --- |
 | v0.2.1 | Governance merged; baseline imported; CI configured and observable |
 | v0.3.0 | Native Rust bridge compiles/links; security and sessions scoped after validation |
+| v0.3.1 | Isolated session storage, task-safe native UI, migration and device tests |
 | v0.4.0 | Versioned SQLite migration and retrieval tests |
 | v0.5.0 | Upstream agent orchestration integrated and tested |
 | v0.6.0 | Native device tools, scoped permissions and approvals |
