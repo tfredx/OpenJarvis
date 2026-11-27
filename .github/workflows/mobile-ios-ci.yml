@@ -4,6 +4,7 @@ on:
     branches: [ios/main]
   push:
     branches: [ios/main]
+    tags: ['ios-v*']
 permissions:
   contents: read
 concurrency:
@@ -51,9 +52,12 @@ jobs:
           path: mobile/ios/audit/swift-test.log
           if-no-files-found: warn
           retention-days: 14
+  security:
+    name: Existing repository security audit
+    uses: ./.github/workflows/security-sast.yml
   native:
     name: Mobile native iOS build
-    needs: portable
+    needs: [portable, security]
     runs-on: xcode-27
     timeout-minutes: 45
     defaults:
@@ -62,7 +66,21 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          fetch-depth: 0
           persist-credentials: false
+      - name: Validate iOS release tag
+        if: github.ref_type == 'tag'
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin ios/main
+          release_version=$(./scripts/validate-ios-release-tag.sh \
+            "$RELEASE_TAG" "$RELEASE_SHA" "$(git rev-parse FETCH_HEAD)")
+          echo "IOS_RELEASE_VERSION=$release_version" >> "$GITHUB_ENV"
+          echo "IOS_RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+          echo "IOS_RELEASE_BUILD=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
       - name: Verify SDK and install build prerequisites
         run: |
           set -euo pipefail
@@ -83,28 +101,50 @@ jobs:
       - name: Unsigned device build
         run: |
           set -o pipefail
+          version_args=()
+          if [[ -n "${IOS_RELEASE_VERSION:-}" ]]; then
+            version_args+=("MARKETING_VERSION=$IOS_RELEASE_VERSION" "CURRENT_PROJECT_VERSION=$IOS_RELEASE_BUILD")
+          fi
           xcodebuild -project ios/OpenJarvisMobile.xcodeproj -scheme OpenJarvisMobile \
             -sdk iphoneos -destination 'generic/platform=iOS' ARCHS=arm64 \
             -configuration Debug CODE_SIGNING_ALLOWED=NO \
+            "${version_args[@]}" \
             -derivedDataPath .ios-build/device build 2>&1 | tee audit/xcode-device.log
       - name: Unsigned simulator build
         run: |
           set -o pipefail
+          version_args=()
+          if [[ -n "${IOS_RELEASE_VERSION:-}" ]]; then
+            version_args+=("MARKETING_VERSION=$IOS_RELEASE_VERSION" "CURRENT_PROJECT_VERSION=$IOS_RELEASE_BUILD")
+          fi
           xcodebuild -project ios/OpenJarvisMobile.xcodeproj -scheme OpenJarvisMobile \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 \
             -configuration Debug CODE_SIGNING_ALLOWED=NO \
+            "${version_args[@]}" \
             -derivedDataPath .ios-build/simulator build 2>&1 | tee audit/xcode-simulator.log
       - name: Run hosted native integration tests
         run: ./scripts/test-native-integration.sh
       - name: Package verified unsigned app bundles
         run: ./scripts/package-native-builds.sh
       - name: Publish unsigned development build
+        if: github.ref_type != 'tag'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: mobile-unsigned-development-build
           path: mobile/ios/.ios-build/packages/*
           if-no-files-found: error
           retention-days: 14
+      - name: Publish versioned unsigned IPA
+        if: github.ref_type == 'tag'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: OpenJarvisMobile-${{ env.IOS_RELEASE_TAG }}-unsigned
+          path: |
+            mobile/ios/.ios-build/packages/OpenJarvisMobile-${{ env.IOS_RELEASE_TAG }}-unsigned.ipa
+            mobile/ios/.ios-build/packages/BUILD-MANIFEST.json
+            mobile/ios/.ios-build/packages/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 90
       - name: Record resolved lockfile hash
         if: always()
         run: |

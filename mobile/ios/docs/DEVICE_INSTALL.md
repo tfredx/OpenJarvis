@@ -1,6 +1,6 @@
 # Developer installation and device validation
 
-This is an experimental application, not an App Store release. CI builds unsigned device and simulator .app bundles. The device ZIP is not an IPA, is not signed, and cannot be directly installed on an iPhone from Files or Safari. Use Xcode for personal development signing. No Apple account credentials, signing certificates or provisioning profiles should be uploaded to GitHub.
+This is an experimental application, not an App Store release. CI builds unsigned device and simulator .app bundles. A validated `ios-vX.Y.Z` tag also produces a versioned unsigned IPA Actions artifact. Neither the device ZIP nor unsigned IPA includes signing credentials or a provisioning profile; neither can be directly installed from Files or Safari. Use Xcode for personal development signing. No Apple account credentials, signing certificates or provisioning profiles should be uploaded to GitHub.
 
 ## Prerequisites
 - Mac with Xcode 27+ and its iOS simulator runtime. Open Xcode once and install required components.
@@ -21,7 +21,7 @@ If already cloned, fetch and update to the verified integration commit. Verify t
 The native-required configuration must identify the upstream Rust conversation bridge in Settings. The Swift-only mode is a diagnostic configuration, not a native validation substitute.
 
 ## CI build artifact
-After successful simulator integration execution, CI packages the two unsigned app bundles, records source commit/run ID, Xcode version, lockfile hash, archive byte sizes and SHA-256, and retains them for 14 days as mobile-unsigned-development-build. Verify SHA256SUMS.txt in the extracted artifact. These are developer inspection outputs, not signed installation files. No production distribution.
+After successful CI validation, ordinary branch runs publish unsigned device/simulator app bundles and a development IPA for 14 days. A valid `ios-vX.Y.Z` tag pointing into `ios/main` publishes `OpenJarvisMobile-ios-vX.Y.Z-unsigned.ipa`, `BUILD-MANIFEST.json` and `SHA256SUMS.txt` as a versioned Actions artifact retained for 90 days. The workflow requires portable tests, security audit, Rust bridge validation, arm64 `iphoneos` and simulator compilation, and hosted simulator integration tests before publishing. Verify the checksum file after download. The IPA must be re-signed locally before installation. Artifact generation does not create a GitHub release or validate physical-device runtime behavior.
 
 ## Device tests
 Use the acceptance checklist in issue #4: launch, bridge identification, real on-device inference and offline request, memory denial/approval/relaunch, checkpoint cancellation/recovery, Shortcut prefill, unavailable model behavior and erase/delete scope. Use synthetic requests only. Record commit, iOS version and results in issue #4, without personal data. A compiled or simulator-tested app does not satisfy physical validation.

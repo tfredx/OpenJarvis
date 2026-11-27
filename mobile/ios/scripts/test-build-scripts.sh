@@ -2,6 +2,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 for script in "$ROOT"/scripts/*.sh; do bash -n "$script"; done
+[[ -x "$ROOT/scripts/test-build-scripts.sh" && -x "$ROOT/scripts/package-native-builds.sh" ]]
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 VERIFY="$ROOT/scripts/verify-bridge-symbols.sh"
@@ -24,4 +25,35 @@ BUILD="$ROOT/scripts/build-rust-bridge.sh"
 [[ $(grep -c '^TEMP=$(mktemp -d)$' "$BUILD") -eq 1 ]]
 [[ $(grep -c '^xcodebuild -create-xcframework' "$BUILD") -eq 1 ]]
 [[ $(grep -c 'scripts/verify-bridge-symbols.sh' "$BUILD") -eq 1 ]]
-printf 'PASS: all shell syntax, symbol fixture and packaging structure checks\n'
+TAG_VALIDATOR="$ROOT/scripts/validate-ios-release-tag.sh"
+MAIN_REPO="$TMP/release-main"
+OTHER_REPO="$TMP/release-other"
+git init -q "$MAIN_REPO"
+git -C "$MAIN_REPO" config user.name 'OpenJarvis CI Test'
+git -C "$MAIN_REPO" config user.email 'ci-test@example.invalid'
+printf 'base\n' > "$MAIN_REPO/source"
+git -C "$MAIN_REPO" add source
+git -C "$MAIN_REPO" commit -qm 'base'
+BASE_SHA=$(git -C "$MAIN_REPO" rev-parse HEAD)
+printf 'main\n' > "$MAIN_REPO/source"
+git -C "$MAIN_REPO" commit -qam 'ios main'
+MAIN_SHA=$(git -C "$MAIN_REPO" rev-parse HEAD)
+VERSION=$("$TAG_VALIDATOR" ios-v1.2.3 "$BASE_SHA" "$MAIN_SHA" "$MAIN_REPO")
+[[ "$VERSION" == 1.2.3 ]]
+if "$TAG_VALIDATOR" ios-v1.2.3-rc.1 "$BASE_SHA" "$MAIN_SHA" "$MAIN_REPO"; then
+  echo 'Accepted a non-release iOS version tag' >&2
+  exit 1
+fi
+git init -q "$OTHER_REPO"
+git -C "$OTHER_REPO" config user.name 'OpenJarvis CI Test'
+git -C "$OTHER_REPO" config user.email 'ci-test@example.invalid'
+printf 'unrelated\n' > "$OTHER_REPO/source"
+git -C "$OTHER_REPO" add source
+git -C "$OTHER_REPO" commit -qm 'unrelated'
+OTHER_SHA=$(git -C "$OTHER_REPO" rev-parse HEAD)
+git -C "$MAIN_REPO" fetch -q "$OTHER_REPO" "$OTHER_SHA"
+if "$TAG_VALIDATOR" ios-v1.2.3 "$OTHER_SHA" "$MAIN_SHA" "$MAIN_REPO"; then
+  echo 'Accepted a release commit outside ios/main history' >&2
+  exit 1
+fi
+printf 'PASS: shell syntax, symbol fixtures, release-tag guard and packaging structure checks\n'
