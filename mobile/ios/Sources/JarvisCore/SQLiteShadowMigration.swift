@@ -51,7 +51,7 @@ public enum SQLiteMigrationError: Error, LocalizedError, Equatable {
               record.stageDirectory == stagePrefix + id.uuidString else {
             throw SQLiteMigrationError.invalidJournal
         }
-        let stages = entries.filter { $0.hasPrefix(stagePrefix) }
+        let stages = entries.filter { $0.hasPrefix(stagePrefix) && $0 != journalName }
         guard stages.isEmpty || stages == [record.stageDirectory] else {
             throw SQLiteMigrationError.untrackedStage
         }
