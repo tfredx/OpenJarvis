@@ -64,4 +64,30 @@ import XCTest
         XCTAssertThrowsError(try SQLiteShadowMigration.rehearse(scratchRoot: missing) { a })
         XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: dir.path).isEmpty)
     }
+
+    func testRecoveryPreservesDanglingJournalAndRecordedStageLinks() async throws {
+        let dir = try root()
+        let fm = FileManager.default
+        defer { try? fm.removeItem(at: dir) }
+        let journal = dir.appendingPathComponent(SQLiteMigrationJournal.journalName)
+        let missing = dir.appendingPathComponent("missing")
+        try fm.createSymbolicLink(at: journal, withDestinationURL: missing)
+        XCTAssertThrowsError(try SQLiteMigrationJournal.prepare(in: dir)) {
+            XCTAssertEqual($0 as? SQLiteMigrationError, .invalidJournal)
+        }
+        XCTAssertEqual(try fm.destinationOfSymbolicLink(atPath: journal.path), missing.path)
+        try fm.removeItem(at: journal)
+
+        let stageName = SQLiteMigrationJournal.stagePrefix + UUID().uuidString
+        let stage = dir.appendingPathComponent(stageName)
+        let record = SQLiteMigrationJournal.Record(version: 1, stageDirectory: stageName)
+        let bytes = try JSONEncoder().encode(record)
+        try bytes.write(to: journal)
+        try fm.createSymbolicLink(at: stage, withDestinationURL: missing)
+        XCTAssertThrowsError(try SQLiteMigrationJournal.recover(in: dir)) {
+            XCTAssertEqual($0 as? SQLiteMigrationError, .invalidJournal)
+        }
+        XCTAssertEqual(try fm.destinationOfSymbolicLink(atPath: stage.path), missing.path)
+        XCTAssertEqual(try Data(contentsOf: journal), bytes)
+    }
 }
