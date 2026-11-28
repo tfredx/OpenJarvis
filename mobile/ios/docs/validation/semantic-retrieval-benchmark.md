@@ -93,3 +93,9 @@ The next investigation uses the four existing synthetic audit JSON files (distan
 ### Independent confirmation on the owner Mac at ba4e746f
 
 Calibration retrieved 9/12 positives and the previous holdout retrieved 11/12, both with zero false selections. On the independently measured 25-query set, the frozen policy retrieved 9/16 relevant notes and rejected 84/84 negatives. It abstained on all nine no-answer queries and on seven answerable queries. Observed recall of 56.25% failed the 65% floor, which requires 11 of 16. The candidate is rejected. Inspection of the lexical veto alone excludes one labeled positive (fresh-6-2, Oak Pier). The other six misses require the saved model judgments to distinguish first-stage rejection, verification rejection and multiple verified candidates. Keep this result as historical evidence if these cases inform another policy. No new device build or iPhone inference evidence was generated.
+
+### Independent replication on the owner Mac at 9b30b939
+
+The Mac replay returned 10/12, 11/12 and 11/16 relevant notes on the three previously examined splits. Each recorded zero false selections. The fresh 25-query replication retrieved 14 of 16 relevant notes and incorrectly selected two of 84 irrelevant notes. Both false selections occurred on unanswerable queries (2/9). Precision and recall were each 87.5%. The pair false-positive rate was 2.38%. Precision fell below the 90% floor and the two no-answer injections failed the zero-injection requirement. The Mac runner rejected the candidate.
+
+This is benchmark evidence. The aggregate result does not identify the two notes or whether the tie-break chose them. Replay requires retrieval-replication-pointwise.json and retrieval-replication-verified.json from the same evidence directory. The checked-out corpus supplies the labels. Production integration, the original native regression and physical iPhone acceptance remain pending.
