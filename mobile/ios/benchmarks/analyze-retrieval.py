@@ -9,8 +9,12 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 
 
+def query_terms(query, stop_words):
+    return {t for t in re.findall(r"[a-z0-9]+", query.lower()) if len(t) > 2} - stop_words
+
+
 def lexical(query, note, stop_words):
-    terms = {t for t in re.findall(r"[a-z0-9]+", query.lower()) if len(t) > 2} - stop_words
+    terms = query_terms(query, stop_words)
     return len(terms.intersection(re.findall(r"[a-z0-9]+", note.lower()))) / len(terms) if terms else 0
 
 
@@ -134,6 +138,8 @@ def main():
     if len(ids) != len(candidates) or len(ids) < 100:
         raise SystemExit("Corpus requires at least 100 uniquely labeled pairs.")
     metadata = {"available": False, "mode": "lexical-only"}
+    swift = (HERE.parent / "Sources/JarvisCore/MemoryRetrieval.swift").read_text()
+    stop_words = set(re.findall(r'"([a-z]+)"', swift.split("private static let stopWords", 1)[1].split("]", 1)[0]))
     if args.distances:
         evidence = json.loads(args.distances.read_text())
         native = {row["id"]: row for row in evidence["rows"]}
@@ -141,8 +147,6 @@ def main():
             raise SystemExit("Native measurements do not match the corpus.")
         metadata = evidence["metadata"]
     else:
-        swift = (HERE.parent / "Sources/JarvisCore/MemoryRetrieval.swift").read_text()
-        stop_words = set(re.findall(r'"([a-z]+)"', swift.split("private static let stopWords", 1)[1].split("]", 1)[0]))
         native = {row["id"]: {"distance": None, "lexical": lexical(g["query"], row["text"], stop_words)}
                   for g in groups for row in g["candidates"]}
     for row in candidates:
@@ -291,6 +295,12 @@ def main():
         print("grounded", json.dumps({"checked_approvals": len(grounded), "failed_verdicts": failed}))
         if failures == 0 and failed == 0:
             policies["grounded-single-answer"] = select_grounded
+            # Standalone questions with a single content term may omit the
+            # referent. Apply the same abstention rule to every query.
+            specific_ids = {r["id"] for group in groups
+                            if len(query_terms(group["query"], stop_words)) >= 2
+                            for r in group["candidates"]}
+            policies["grounded-specific-query"] = lambda rs: select_grounded(rs) & specific_ids
             if listwise_endorsements is not None:
                 # Corroborate an already unique grounded winner. A listwise
                 # endorsement cannot break a tie or replace a rejected note.
