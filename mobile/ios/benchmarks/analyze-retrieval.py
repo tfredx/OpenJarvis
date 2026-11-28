@@ -121,6 +121,7 @@ def main():
     parser.add_argument("--answerability", type=Path)
     parser.add_argument("--pointwise", type=Path)
     parser.add_argument("--grounded", type=Path)
+    parser.add_argument("--explain-calibration", action="store_true")
     args = parser.parse_args()
     if args.grounded and not args.pointwise:
         parser.error("--grounded requires --pointwise")
@@ -298,6 +299,27 @@ def main():
                 )
         else:
             print("grounded-ineligible: incomplete model evidence")
+
+    if args.explain_calibration:
+        for group in calibration:
+            rs = group["candidates"]
+            for name, policy in policies.items():
+                if not name.startswith("grounded-"):
+                    continue
+                chosen = policy(rs)
+                expected_ids = {r["id"] for r in rs if r["relevant"]}
+                if chosen == expected_ids:
+                    continue
+                print("calibration-error", json.dumps({
+                    "policy": name, "query_id": group["id"], "query": group["query"],
+                    "selected": sorted(chosen), "expected": sorted(expected_ids),
+                    "pointwise_approved": approvals(rs),
+                    "candidates": [
+                        {"id": r["id"], "text": r["text"], "relevant": r["relevant"],
+                         "grounded": grounded.get(r["id"])}
+                        for r in rs
+                    ],
+                }))
 
     results = {name: metrics(calibration, policy) for name, policy in policies.items()}
     for name, result in results.items():
