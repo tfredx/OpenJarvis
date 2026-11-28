@@ -55,8 +55,15 @@ Depends on integrated PRs #26 and #27. No new permissions, dependencies, network
 Current branch refreshed against PR #31 integration; required CI pending.
 
 
+## PR #33 — task activity
+
+Shows the latest task using real conversation and checkpoint data. Adds expandable outcomes and existing approval, cancellation and recovery operations to the Activity tab. Documents the supported execution path and deferred background options. Independent of #29–#32. Local whitespace and build-script fixtures passed. Swift/Xcode CI, Dynamic Type and VoiceOver validation remain pending. No additional permissions or storage schema changes.
+
+Refreshed after PR #29 integration; required CI pending.
+
+
 ## PR #32 — feature increment
 
 Distinguishes absent paths from dangling symlinks in the migration scratch directory and rejects invalid journal records during cleanup. Tests verify retention of dangling journal and recorded-stage links. Depends on existing shadow migration only and adds no storage activation. Local whitespace and shell fixtures passed. Swift and native CI pending.
 
-Refreshed against `c2ffc34f6e50487e79a234975ab2f6991b443b4b` after PR #29 integration. Required CI pending.
+Refreshed against `0f0368360fd208178cd436a3e94fe50ee6c2a2fe` after PR #33 integration. Required CI pending.
