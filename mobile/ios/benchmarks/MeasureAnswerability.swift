@@ -96,7 +96,7 @@ private struct EvidenceInput: Encodable {
     let quote: String
 }
 
-private func measureGrounded(_ groups: [Group], saved: [SavedVerdict]) async throws -> [SingleNoteRow] {
+private func measureGrounded(_ groups: [Group], saved: [SavedVerdict], mode: String) async throws -> [SingleNoteRow] {
     let ids = Set(groups.flatMap { $0.candidates.map(\.id) })
     var decisions: [String: Bool] = [:]
     for row in saved {
@@ -110,7 +110,9 @@ private func measureGrounded(_ groups: [Group], saved: [SavedVerdict]) async thr
     var rows: [SingleNoteRow] = []
     for group in groups {
         let approved = group.candidates.filter { decisions[$0.id] == true }
-        guard approved.count > 1 else { continue }
+        if approved.isEmpty { continue }
+        if mode == "--grounded" && approved.count == 1 { continue }
+        if mode == "--verify-singles" && approved.count != 1 { continue }
         for candidate in approved {
             do {
                 let input = SingleNoteInput(question: group.query, note: candidate.text)
@@ -164,12 +166,13 @@ struct MeasureAnswerability {
         let groups = try JSONDecoder().decode(
             [Group].self, from: Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[1]))
         )
-        if CommandLine.arguments.dropFirst(3).first == "--grounded" {
+        let mode = CommandLine.arguments.dropFirst(3).first
+        if let mode, ["--grounded", "--verify-all", "--verify-singles"].contains(mode) {
             guard CommandLine.arguments.count == 5 else { throw CocoaError(.fileReadCorruptFile) }
             let saved = try JSONDecoder().decode(
                 [SavedVerdict].self, from: Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[4]))
             )
-            let rows = try await measureGrounded(groups, saved: saved)
+            let rows = try await measureGrounded(groups, saved: saved, mode: mode)
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             try encoder.encode(rows).write(to: URL(fileURLWithPath: CommandLine.arguments[2]), options: .atomic)
