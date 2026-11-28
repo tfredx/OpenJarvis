@@ -17,7 +17,7 @@ public struct OnDeviceMemorySemanticMatcher: MemorySemanticMatcher {
         #if canImport(NaturalLanguage)
         guard let embedding = NLEmbedding.sentenceEmbedding(for: .english) else { return nil }
         let value = embedding.distance(between: query, and: note, distanceType: .cosine)
-        return value.isFinite ? value : nil
+        return value.isFinite && (0...2).contains(value) ? value : nil
         #else
         return nil
         #endif
@@ -36,17 +36,25 @@ enum MemoryRetrieval {
         "those", "through", "what", "when", "where", "which", "while", "with", "would", "your"
     ]
 
+    static func lexicalQueryTerms(_ text: String) -> Set<String> {
+        Set(tokens(text).filter { $0.count > 2 && !stopWords.contains($0) })
+    }
+
+    static func lexicalCoverage(terms: Set<String>, note: String) -> Double {
+        guard !terms.isEmpty else { return 0 }
+        return Double(terms.intersection(tokens(note)).count) / Double(terms.count)
+    }
+
     static func rank(
         query: String,
         notes: [Note],
         semanticDistance: (String, String) -> Double? = { _, _ in nil }
     ) -> [Note] {
-        let queryTerms = Set(tokens(query).filter { $0.count > 2 && !stopWords.contains($0) })
+        let queryTerms = lexicalQueryTerms(query)
         guard !queryTerms.isEmpty else { return [] }
 
         return notes.enumerated().compactMap { index, note -> (note: Note, score: Double, recency: Int)? in
-            let noteTerms = Set(tokens(note.text))
-            let lexical = queryTerms.isEmpty ? 0 : Double(queryTerms.intersection(noteTerms).count) / Double(queryTerms.count)
+            let lexical = lexicalCoverage(terms: queryTerms, note: note.text)
             let distance = semanticDistance(query, note.text)
             let semantic: Double
             if let distance, distance.isFinite, (0...maximumSemanticDistance).contains(distance) {

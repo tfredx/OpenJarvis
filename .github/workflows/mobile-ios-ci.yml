@@ -93,6 +93,13 @@ jobs:
           rustup --version
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen --version | tee audit/xcodegen-version.txt
+      - name: Record native memory retrieval benchmark
+        run: ./scripts/benchmark-memory-retrieval.sh
+      - name: Run native Apple embedding acceptance regression
+        run: |
+          set -o pipefail
+          swift test --filter NativeMemoryEmbeddingTests 2>&1 | tee audit/macos-memory-acceptance.log
+          grep -Eq 'Executed [1-9][0-9]* tests?, with 0 failures' audit/macos-memory-acceptance.log
       - name: Run upstream bridge host tests and cross-build
         run: ./scripts/build-rust-bridge.sh
       - name: Generate native-required project

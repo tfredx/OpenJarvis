@@ -1,0 +1,160 @@
+#!/usr/bin/env python3
+"""Score a labeled, query-grouped synthetic corpus. Uses the standard library."""
+import argparse
+import json
+import math
+import re
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+
+
+def lexical(query, note, stop_words):
+    terms = {t for t in re.findall(r"[a-z0-9]+", query.lower()) if len(t) > 2} - stop_words
+    return len(terms.intersection(re.findall(r"[a-z0-9]+", note.lower()))) / len(terms) if terms else 0
+
+
+def ranked(rows, score, minimum=0, cap=3, margin=None):
+    scores = [(score(row), row["id"]) for row in rows]
+    scores = sorted(((s, ident) for s, ident in scores if s is not None), reverse=True, key=lambda x: x[0])
+    if margin is not None and (len(scores) < 2 or scores[0][0] - scores[1][0] < margin):
+        return set()
+    return {ident for s, ident in scores[:cap] if s > minimum}
+
+
+def production(rows):
+    def score(row):
+        d = row["distance"]
+        semantic = 0.5 * (1 - d / 0.45) if d is not None and 0 <= d <= 0.45 else 0
+        return max(row["lexical"], semantic)
+    return ranked(rows, score)
+
+
+def select_absolute(rows, threshold):
+    return ranked(rows, lambda r: -r["distance"] if r["distance"] is not None
+                  and r["distance"] <= threshold else None, minimum=-math.inf)
+
+
+def select_confident(rows, threshold, margin, lexical_weight):
+    if any(row["distance"] is None for row in rows):
+        return set()
+    def score(row):
+        return (1 - lexical_weight) * (1 - row["distance"] / 2) + lexical_weight * row["lexical"]
+    return ranked(rows, score, minimum=threshold, cap=1, margin=margin)
+
+
+def divide(num, den):
+    return num / den if den else None
+
+
+def metrics(groups, policy):
+    tp = fp = tn = fn = abstained = no_answer_injected = 0
+    for group in groups:
+        rows = group["candidates"]
+        selected = policy(rows)
+        abstained += not selected
+        no_answer_injected += bool(selected) and not any(r["relevant"] for r in rows)
+        for row in rows:
+            predicted = row["id"] in selected
+            expected = row["relevant"]
+            tp += expected and predicted
+            fp += not expected and predicted
+            tn += not expected and not predicted
+            fn += expected and not predicted
+    return dict(tp=tp, fp=fp, tn=tn, fn=fn, precision=divide(tp, tp + fp), recall=divide(tp, tp + fn),
+                fpr=divide(fp, fp + tn), fnr=divide(fn, tp + fn),
+                abstained=abstained, no_answer_injected=no_answer_injected)
+
+
+def distribution(values):
+    values = sorted(v for v in values if v is not None)
+    if not values:
+        return {"n": 0}
+    return {"n": len(values), **{f"p{pct}": round(values[round((len(values) - 1) * pct / 100)], 6)
+                               for pct in (0, 10, 25, 50, 75, 90, 100)}}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--distances", type=Path)
+    mode.add_argument("--lexical-only", action="store_true")
+    args = parser.parse_args()
+
+    groups = json.loads((HERE / "semantic-retrieval.json").read_text())
+    candidates = [row for group in groups for row in group["candidates"]]
+    ids = {row["id"] for row in candidates}
+    if len(ids) != len(candidates) or len(ids) < 100:
+        raise SystemExit("Corpus requires at least 100 uniquely labeled pairs.")
+    metadata = {"available": False, "mode": "lexical-only"}
+    if args.distances:
+        evidence = json.loads(args.distances.read_text())
+        native = {row["id"]: row for row in evidence["rows"]}
+        if set(native) != ids or len(native) != len(evidence["rows"]):
+            raise SystemExit("Native measurements do not match the corpus.")
+        metadata = evidence["metadata"]
+    else:
+        swift = (HERE.parent / "Sources/JarvisCore/MemoryRetrieval.swift").read_text()
+        stop_words = set(re.findall(r'"([a-z]+)"', swift.split("private static let stopWords", 1)[1].split("]", 1)[0]))
+        native = {row["id"]: {"distance": None, "lexical": lexical(g["query"], row["text"], stop_words)}
+                  for g in groups for row in g["candidates"]}
+    for row in candidates:
+        row.update(native[row["id"]])
+
+    print(json.dumps({"pairs": len(ids), "queries": len(groups), "metadata": metadata}, sort_keys=True))
+    calibration = [g for g in groups if g["split"] == "calibration"]
+    holdout = [g for g in groups if g["split"] == "holdout"]
+    for name, subset in [("calibration", calibration), ("holdout", holdout)]:
+        print(name, "lexical-baseline", json.dumps(metrics(subset, lambda rows: ranked(rows, lambda r: r["lexical"]))))
+        print(name, "production", json.dumps(metrics(subset, production)))
+
+    if args.lexical_only:
+        return
+    rows = list(native.values())
+    for row in candidates:
+        d = row["distance"]
+        if d is not None and (not isinstance(d, (float, int)) or not math.isfinite(d) or not 0 <= d <= 2):
+            raise SystemExit("Native matcher returned an invalid cosine distance.")
+    for label in (True, False):
+        for field in ("distance", "normalized", "cosine_from_vectors"):
+            print("distance-distribution", label, field,
+                  json.dumps(distribution(r.get(field) for r in candidates if r["relevant"] == label)))
+    for field in ("normalized", "cosine_from_vectors"):
+        print("absolute-difference-from-production", field,
+              json.dumps(distribution(abs(r["distance"] - r[field]) for r in rows
+                                      if r["distance"] is not None and r.get(field) is not None)))
+    print("germination-regression", json.dumps({r["id"]: r for r in rows if r["id"] in ("germination-1", "germination-2")}))
+    missing = sum(r["distance"] is None for r in rows)
+    print("native-missing", missing)
+    if not metadata["available"] or missing or metadata.get("self_distance") is None:
+        raise SystemExit("Native evidence is incomplete. No candidate policy may be selected.")
+
+    policies = {}
+    for cutoff in (0.45, 0.7, 0.9, 1.05, 1.15, 1.3):
+        policies[f"absolute-{cutoff}"] = lambda rs, cutoff=cutoff: select_absolute(rs, cutoff)
+    for weight in (0, 0.25, 0.5):
+        for floor in (0.35, 0.50, 0.65):
+            for gap in (0.03, 0.08, 0.15):
+                policies[f"confidence-fusion-{weight}-{floor}-{gap}"] = (
+                    lambda rs, floor=floor, gap=gap, weight=weight: select_confident(rs, floor, gap, weight)
+                )
+    results = {name: metrics(calibration, policy) for name, policy in policies.items()}
+    for name, result in results.items():
+        print("calibration", name, json.dumps(result))
+    def acceptable(result):
+        return ((result["precision"] or 0) >= 0.9 and (result["recall"] or 0) >= 0.65
+                and result["fpr"] <= 0.05 and result["no_answer_injected"] == 0)
+    eligible = [name for name, result in results.items() if acceptable(result)]
+    if not eligible:
+        print("candidate none: calibration safety or recall criterion not met")
+        return
+    picked = sorted(eligible, key=lambda n: (-results[n]["recall"], results[n]["fpr"], n))[0]
+    result = metrics(holdout, policies[picked])
+    print("holdout", picked, json.dumps(result))
+    for category in sorted({g["category"] for g in holdout}):
+        print("holdout-category", category, json.dumps(metrics([g for g in holdout if g["category"] == category], policies[picked])))
+    print("candidate", picked if acceptable(result) else "none: holdout criterion not met")
+
+
+if __name__ == "__main__":
+    main()

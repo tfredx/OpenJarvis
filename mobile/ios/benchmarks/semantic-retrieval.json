@@ -1,0 +1,842 @@
+[
+  {
+    "id": "germination",
+    "split": "calibration",
+    "category": "paraphrase",
+    "query": "How does germination proceed?",
+    "candidates": [
+      {
+        "id": "germination-1",
+        "text": "The sprouting process starts after hydration awakens an embryo.",
+        "relevant": true
+      },
+      {
+        "id": "germination-2",
+        "text": "A battery stores chemical energy and converts it into electrical energy.",
+        "relevant": false
+      },
+      {
+        "id": "germination-3",
+        "text": "Dormant seeds can stay in a packet for several years.",
+        "relevant": false
+      },
+      {
+        "id": "germination-4",
+        "text": "A plant's leaves make sugars using light.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "coffee",
+    "split": "calibration",
+    "category": "paraphrase",
+    "query": "How do I make cold brew coffee?",
+    "candidates": [
+      {
+        "id": "coffee-1",
+        "text": "Steep coarse grounds overnight in cool water and strain the concentrate.",
+        "relevant": true
+      },
+      {
+        "id": "coffee-2",
+        "text": "I brew hot coffee with a paper filter at breakfast.",
+        "relevant": false
+      },
+      {
+        "id": "coffee-3",
+        "text": "The fridge filter is due for replacement.",
+        "relevant": false
+      },
+      {
+        "id": "coffee-4",
+        "text": "Coffee grounds can be added to compost.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "commute",
+    "split": "calibration",
+    "category": "paraphrase",
+    "query": "How can I get to work without driving?",
+    "candidates": [
+      {
+        "id": "commute-1",
+        "text": "I can ride the city bus to the office from Oak Street.",
+        "relevant": true
+      },
+      {
+        "id": "commute-2",
+        "text": "The city bus stops running before the concert ends.",
+        "relevant": false
+      },
+      {
+        "id": "commute-3",
+        "text": "I drive to the grocery store on Sundays.",
+        "relevant": false
+      },
+      {
+        "id": "commute-4",
+        "text": "My desk lamp needs a new bulb.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "sleep",
+    "split": "calibration",
+    "category": "personal",
+    "query": "Which pillow do I prefer for sleeping?",
+    "candidates": [
+      {
+        "id": "sleep-1",
+        "text": "My favorite sleeping pillow is the firm memory foam one.",
+        "relevant": true
+      },
+      {
+        "id": "sleep-2",
+        "text": "I prefer a soft cushion for my sofa.",
+        "relevant": false
+      },
+      {
+        "id": "sleep-3",
+        "text": "My mattress warranty ends in April.",
+        "relevant": false
+      },
+      {
+        "id": "sleep-4",
+        "text": "I set an alarm for early workouts.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "allergy",
+    "split": "calibration",
+    "category": "personal",
+    "query": "  What should I avoid when   choosing a dessert for our guest Noor?",
+    "candidates": [
+      {
+        "id": "allergy-1",
+        "text": "Noor cannot eat peanuts, including in sweets.",
+        "relevant": true
+      },
+      {
+        "id": "allergy-2",
+        "text": "I like peanut butter with toast.",
+        "relevant": false
+      },
+      {
+        "id": "allergy-3",
+        "text": "Noor prefers to arrive early for dinner.",
+        "relevant": false
+      },
+      {
+        "id": "allergy-4",
+        "text": "I avoid coffee after lunch.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "deployment",
+    "split": "calibration",
+    "category": "hard-negative",
+    "query": "How can I roll back the iOS app update?",
+    "candidates": [
+      {
+        "id": "deployment-1",
+        "text": "Restore the previous signed iPhone build from the approved archive.",
+        "relevant": true
+      },
+      {
+        "id": "deployment-2",
+        "text": "Rollback of the database uses a transaction journal.",
+        "relevant": false
+      },
+      {
+        "id": "deployment-3",
+        "text": "An iOS update must pass simulator tests before release.",
+        "relevant": false
+      },
+      {
+        "id": "deployment-4",
+        "text": "We keep printer paper in the lower drawer.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "forecast",
+    "split": "calibration",
+    "category": "hard-negative",
+    "query": "What does the Houston seat forecast measure?",
+    "candidates": [
+      {
+        "id": "forecast-1",
+        "text": "The Houston seat forecast estimates class enrollment demand by course.",
+        "relevant": true
+      },
+      {
+        "id": "forecast-2",
+        "text": "The Houston room forecast estimates concurrent parking demand.",
+        "relevant": false
+      },
+      {
+        "id": "forecast-3",
+        "text": "Seat numbers for the concert are on my ticket.",
+        "relevant": false
+      },
+      {
+        "id": "forecast-4",
+        "text": "The weather forecast for Houston includes rain.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "meeting-time",
+    "split": "calibration",
+    "category": "exact",
+    "query": "When is the Thursday design review?",
+    "candidates": [
+      {
+        "id": "meeting-time-1",
+        "text": "The Thursday design review starts at 2 pm.",
+        "relevant": true
+      },
+      {
+        "id": "meeting-time-2",
+        "text": "The Wednesday design review has been canceled.",
+        "relevant": false
+      },
+      {
+        "id": "meeting-time-3",
+        "text": "The Thursday budget review starts at 11 am.",
+        "relevant": false
+      },
+      {
+        "id": "meeting-time-4",
+        "text": "The design review agenda is in a separate document.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "book-return",
+    "split": "calibration",
+    "category": "paraphrase",
+    "query": "When do I need to bring my library books back?",
+    "candidates": [
+      {
+        "id": "book-return-1",
+        "text": "My borrowed novels must be returned by the end of May.",
+        "relevant": true
+      },
+      {
+        "id": "book-return-2",
+        "text": "I bought two books last winter.",
+        "relevant": false
+      },
+      {
+        "id": "book-return-3",
+        "text": "The library opens at noon on Sundays.",
+        "relevant": false
+      },
+      {
+        "id": "book-return-4",
+        "text": "I must bring my laptop to work tomorrow.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rain",
+    "split": "calibration",
+    "category": "paraphrase",
+    "query": "Why does water fall from clouds?",
+    "candidates": [
+      {
+        "id": "rain-1",
+        "text": "Precipitation occurs when droplets in the atmosphere grow heavy enough to descend.",
+        "relevant": true
+      },
+      {
+        "id": "rain-2",
+        "text": "Cloud backups store my data remotely.",
+        "relevant": false
+      },
+      {
+        "id": "rain-3",
+        "text": "Plants absorb water through their roots.",
+        "relevant": false
+      },
+      {
+        "id": "rain-4",
+        "text": "Fog consists of suspended droplets close to the ground.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "ambiguous-charge",
+    "split": "calibration",
+    "category": "no-answer",
+    "query": "What is the charge?",
+    "candidates": [
+      {
+        "id": "ambiguous-charge-1",
+        "text": "My phone reaches full charge overnight.",
+        "relevant": false
+      },
+      {
+        "id": "ambiguous-charge-2",
+        "text": "The restaurant added a service charge.",
+        "relevant": false
+      },
+      {
+        "id": "ambiguous-charge-3",
+        "text": "The ferry takes contactless payments.",
+        "relevant": false
+      },
+      {
+        "id": "ambiguous-charge-4",
+        "text": "My bag is under the desk.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "ambiguous-it",
+    "split": "calibration",
+    "category": "no-answer",
+    "query": "When does it start?",
+    "candidates": [
+      {
+        "id": "ambiguous-it-1",
+        "text": "The oven starts heating when the timer is set.",
+        "relevant": false
+      },
+      {
+        "id": "ambiguous-it-2",
+        "text": "The concert starts at eight.",
+        "relevant": false
+      },
+      {
+        "id": "ambiguous-it-3",
+        "text": "Jasmine attends the early workshop.",
+        "relevant": false
+      },
+      {
+        "id": "ambiguous-it-4",
+        "text": "The workshop venue has free parking.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "negated-option",
+    "split": "calibration",
+    "category": "hard-negative",
+    "query": "Which exit is open after six?",
+    "candidates": [
+      {
+        "id": "negated-option-1",
+        "text": "Use the north door when leaving after 6 pm.",
+        "relevant": true
+      },
+      {
+        "id": "negated-option-2",
+        "text": "The south exit is closed after six.",
+        "relevant": false
+      },
+      {
+        "id": "negated-option-3",
+        "text": "The south exit is open until noon.",
+        "relevant": false
+      },
+      {
+        "id": "negated-option-4",
+        "text": "The north car park is full on weekdays.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "travel",
+    "split": "calibration",
+    "category": "personal",
+    "query": "What seat should I choose on a plane?",
+    "candidates": [
+      {
+        "id": "travel-1",
+        "text": "I prefer a window seat on every flight.",
+        "relevant": true
+      },
+      {
+        "id": "travel-2",
+        "text": "I prefer an aisle seat at the cinema.",
+        "relevant": false
+      },
+      {
+        "id": "travel-3",
+        "text": "My flight leaves at 7 am.",
+        "relevant": false
+      },
+      {
+        "id": "travel-4",
+        "text": "The window in the spare room sticks.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "absence",
+    "split": "calibration",
+    "category": "no-answer",
+    "query": "What is the Wi-Fi password at the airport?",
+    "candidates": [
+      {
+        "id": "absence-1",
+        "text": "The Wi-Fi password at my house is on a label under the router.",
+        "relevant": false
+      },
+      {
+        "id": "absence-2",
+        "text": "The airport has two terminals.",
+        "relevant": false
+      },
+      {
+        "id": "absence-3",
+        "text": "The train password is printed on the seat card.",
+        "relevant": false
+      },
+      {
+        "id": "absence-4",
+        "text": "My device disconnects from Wi-Fi in the garage.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "oven",
+    "split": "holdout",
+    "category": "paraphrase",
+    "query": "Why did my cake sink in the middle?",
+    "candidates": [
+      {
+        "id": "oven-1",
+        "text": "Opening the oven too soon can collapse the center of a sponge.",
+        "relevant": true
+      },
+      {
+        "id": "oven-2",
+        "text": "My kitchen sink is slow to drain.",
+        "relevant": false
+      },
+      {
+        "id": "oven-3",
+        "text": "Preheat the oven before baking bread.",
+        "relevant": false
+      },
+      {
+        "id": "oven-4",
+        "text": "A metal pan heats faster than a ceramic dish.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fuel",
+    "split": "holdout",
+    "category": "paraphrase",
+    "query": "Why are fuel cells different from batteries?",
+    "candidates": [
+      {
+        "id": "fuel-1",
+        "text": "A fuel cell keeps generating electricity as long as fresh reactants are supplied.",
+        "relevant": true
+      },
+      {
+        "id": "fuel-2",
+        "text": "A battery charger can replenish a stored battery.",
+        "relevant": false
+      },
+      {
+        "id": "fuel-3",
+        "text": "Fuel prices have risen this month.",
+        "relevant": false
+      },
+      {
+        "id": "fuel-4",
+        "text": "My phone has a lithium battery.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "contact",
+    "split": "holdout",
+    "category": "personal",
+    "query": "How should I reach Priya if I need an urgent response?",
+    "candidates": [
+      {
+        "id": "contact-1",
+        "text": "For time-sensitive questions, Priya wants a phone call.",
+        "relevant": true
+      },
+      {
+        "id": "contact-2",
+        "text": "Priya checks email once a week.",
+        "relevant": false
+      },
+      {
+        "id": "contact-3",
+        "text": "Drew does not answer unknown callers.",
+        "relevant": false
+      },
+      {
+        "id": "contact-4",
+        "text": "My urgent reminders appear on the lock screen.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "pan",
+    "split": "holdout",
+    "category": "hard-negative",
+    "query": "How do I clean a cast iron skillet?",
+    "candidates": [
+      {
+        "id": "pan-1",
+        "text": "Scrub cast iron with a brush, dry it thoroughly and oil it lightly.",
+        "relevant": true
+      },
+      {
+        "id": "pan-2",
+        "text": "A stainless steel skillet can go in the dishwasher.",
+        "relevant": false
+      },
+      {
+        "id": "pan-3",
+        "text": "My cast iron skillet fits on the big burner.",
+        "relevant": false
+      },
+      {
+        "id": "pan-4",
+        "text": "Oil stains are hard to remove from fabric.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "chess",
+    "split": "holdout",
+    "category": "exact",
+    "query": "Which chess opening am I practicing?",
+    "candidates": [
+      {
+        "id": "chess-1",
+        "text": "I am practicing the Queen's Gambit as my chess opening.",
+        "relevant": true
+      },
+      {
+        "id": "chess-2",
+        "text": "I practice piano every morning.",
+        "relevant": false
+      },
+      {
+        "id": "chess-3",
+        "text": "We played checkers on vacation.",
+        "relevant": false
+      },
+      {
+        "id": "chess-4",
+        "text": "The chess club is opening a new room.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "refund",
+    "split": "holdout",
+    "category": "hard-negative",
+    "query": "What is the deadline to return the online order?",
+    "candidates": [
+      {
+        "id": "refund-1",
+        "text": "The online shop accepts order returns for 30 days after delivery.",
+        "relevant": true
+      },
+      {
+        "id": "refund-2",
+        "text": "In-store purchases must be returned within two weeks.",
+        "relevant": false
+      },
+      {
+        "id": "refund-3",
+        "text": "The online order tracking page has been updated.",
+        "relevant": false
+      },
+      {
+        "id": "refund-4",
+        "text": "Order delivery normally takes three days.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "spring",
+    "split": "holdout",
+    "category": "no-answer",
+    "query": "How do I fix the spring?",
+    "candidates": [
+      {
+        "id": "spring-1",
+        "text": "Spring planting starts in April.",
+        "relevant": false
+      },
+      {
+        "id": "spring-2",
+        "text": "The crib mattress uses a coil spring.",
+        "relevant": false
+      },
+      {
+        "id": "spring-3",
+        "text": "There is a spring near the hiking trail.",
+        "relevant": false
+      },
+      {
+        "id": "spring-4",
+        "text": "My printer has a paper jam.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "interview",
+    "split": "holdout",
+    "category": "personal",
+    "query": "How do I prefer to prepare for an interview?",
+    "candidates": [
+      {
+        "id": "interview-1",
+        "text": "I rehearse interview answers aloud with a friend.",
+        "relevant": true
+      },
+      {
+        "id": "interview-2",
+        "text": "I prefer to write meeting notes by hand.",
+        "relevant": false
+      },
+      {
+        "id": "interview-3",
+        "text": "The interview is booked for Tuesday.",
+        "relevant": false
+      },
+      {
+        "id": "interview-4",
+        "text": "My friend practices singing every evening.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "calendar",
+    "split": "holdout",
+    "category": "hard-negative",
+    "query": "Is the Friday planning meeting remote or in person?",
+    "candidates": [
+      {
+        "id": "calendar-1",
+        "text": "The Friday planning meeting is on a video call.",
+        "relevant": true
+      },
+      {
+        "id": "calendar-2",
+        "text": "The Friday planning workshop is in room 12.",
+        "relevant": false
+      },
+      {
+        "id": "calendar-3",
+        "text": "The Friday planning meeting has a new agenda.",
+        "relevant": false
+      },
+      {
+        "id": "calendar-4",
+        "text": "My Tuesday planning meeting is in person.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "bike",
+    "split": "holdout",
+    "category": "paraphrase",
+    "query": "How can I stop my bicycle chain from\n squeaking?",
+    "candidates": [
+      {
+        "id": "bike-1",
+        "text": "Clean the drivetrain and add a small amount of chain lubricant.",
+        "relevant": true
+      },
+      {
+        "id": "bike-2",
+        "text": "I store my bicycle in the shed.",
+        "relevant": false
+      },
+      {
+        "id": "bike-3",
+        "text": "Squeaky doors can be oiled at the hinge.",
+        "relevant": false
+      },
+      {
+        "id": "bike-4",
+        "text": "The drive belt on the car needs a service.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "ambiguous-bank",
+    "split": "holdout",
+    "category": "no-answer",
+    "query": "How do I get to the bank?",
+    "candidates": [
+      {
+        "id": "ambiguous-bank-1",
+        "text": "The river bank near the path is muddy.",
+        "relevant": false
+      },
+      {
+        "id": "ambiguous-bank-2",
+        "text": "The bank closes at five on Fridays.",
+        "relevant": false
+      },
+      {
+        "id": "ambiguous-bank-3",
+        "text": "Bus route 9 stops at City Hall.",
+        "relevant": false
+      },
+      {
+        "id": "ambiguous-bank-4",
+        "text": "The riverside trail was reopened.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "printer",
+    "split": "holdout",
+    "category": "paraphrase",
+    "query": "Why is the printer showing one color on every part?",
+    "candidates": [
+      {
+        "id": "printer-1",
+        "text": "The imported project lost its per-part filament assignments.",
+        "relevant": true
+      },
+      {
+        "id": "printer-2",
+        "text": "The paper printer ran out of black ink.",
+        "relevant": false
+      },
+      {
+        "id": "printer-3",
+        "text": "My preferred filament is blue.",
+        "relevant": false
+      },
+      {
+        "id": "printer-4",
+        "text": "The spool holder is a single color.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "pet",
+    "split": "holdout",
+    "category": "personal",
+    "query": "What food should I buy for my cat?",
+    "candidates": [
+      {
+        "id": "pet-1",
+        "text": "My cat eats grain-free salmon kibble.",
+        "relevant": true
+      },
+      {
+        "id": "pet-2",
+        "text": "My friend's dog eats chicken kibble.",
+        "relevant": false
+      },
+      {
+        "id": "pet-3",
+        "text": "My cat sleeps near the window.",
+        "relevant": false
+      },
+      {
+        "id": "pet-4",
+        "text": "The pet store opens at nine.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "kettle",
+    "split": "holdout",
+    "category": "hard-negative",
+    "query": "Is it safe to run the electric kettle when it is empty?",
+    "candidates": [
+      {
+        "id": "kettle-1",
+        "text": "Do not heat the electric kettle without water.",
+        "relevant": true
+      },
+      {
+        "id": "kettle-2",
+        "text": "The electric kettle boils water in three minutes.",
+        "relevant": false
+      },
+      {
+        "id": "kettle-3",
+        "text": "My vacuum can run with an empty dust bin.",
+        "relevant": false
+      },
+      {
+        "id": "kettle-4",
+        "text": "The kettle switch is blue.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "absence-approval",
+    "split": "holdout",
+    "category": "no-answer",
+    "query": "Who approved the new clinical schedule?",
+    "candidates": [
+      {
+        "id": "absence-approval-1",
+        "text": "The clinical schedule was published this morning.",
+        "relevant": false
+      },
+      {
+        "id": "absence-approval-2",
+        "text": "The old clinical schedule was approved by Alex.",
+        "relevant": false
+      },
+      {
+        "id": "absence-approval-3",
+        "text": "The new office schedule was approved by Lee.",
+        "relevant": false
+      },
+      {
+        "id": "absence-approval-4",
+        "text": "The clinical team meets on Tuesday.",
+        "relevant": false
+      }
+    ]
+  }
+]
