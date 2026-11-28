@@ -9,7 +9,7 @@
 | v0.4.1 | Shadow migration rehearsal preserves source bytes; interruption recovery is journaled and fails closed | Complete in CI; JSON remains authoritative, no live cutover |
 | CI/CD | Versioned unsigned IPA artifacts and validation-gated CI | Complete and integrated in PR #20; release-tag path not yet exercised |
 | v0.5.0 | Swift-first orchestration follows pinned upstream OjAgent/AgentContext/AgentResult contracts with local inference and approvals | Implemented in PR #27; CI pending; Rust `openjarvis-agents` implementation not linked |
-| v0.6.0 | Native device tools, scoped permissions and approvals | Permission-neutral dispatcher/API and security tests authored on `feat/ios-native-capability-interfaces`; no provider or iOS permission is active; Swift CI pending |
+| v0.6.0 | Native device tools, scoped permissions and approvals | Permission-neutral dispatcher/API and security tests in PR #28; no provider or iOS permission is active; Swift CI pending |
 | v0.7.0 | Checkpointed background workflows, measured device limits | Not started |
 | v0.8.0 | Additional local models and compute routing | Not started |
 | v0.9.0 | Learning and optional Mac companion | Not started |
