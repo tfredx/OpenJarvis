@@ -37,7 +37,6 @@ public actor Agent: OpenJarvisAgentRuntime {
     private let bridge: any ConversationBridge
     private let authorization: any ToolAuthorization
     private let memoryMatcher: any MemorySemanticMatcher
-    private var lastToolResults: [UpstreamToolResult] = []
     public nonisolated let agentID = "ios-foundation-models"
     public init(engine: any Intelligence, file: URL, maxSteps: Int = 6, bridge: any ConversationBridge = SwiftConversationBridge(), authorization: any ToolAuthorization = LocalToolAuthorization(), memoryMatcher: any MemorySemanticMatcher = OnDeviceMemorySemanticMatcher()) throws {
         self.engine = engine; self.file = file; self.maxSteps = max(1, maxSteps); self.bridge = bridge; self.authorization = authorization; self.memoryMatcher = memoryMatcher
@@ -76,13 +75,13 @@ public actor Agent: OpenJarvisAgentRuntime {
     public func run(input: String, context: UpstreamAgentContext?) async throws -> UpstreamAgentResult {
         let trustedContext = try upstreamContext(for: input)
         if let context, context != trustedContext { throw AgentError.invalidContext }
-        lastToolResults = []
-        let result = try await start(input)
+        try prepareTask(input)
+        let (result, toolResults) = try await run()
         let reply = result.status == .complete
             ? (result.messages.last(where: { $0.role == "assistant" })?.text ?? "") : ""
         return UpstreamAgentResult(
             content: reply,
-            toolResults: lastToolResults,
+            toolResults: toolResults,
             turns: result.steps,
             metadata: [
                 "status": .string(result.status.rawValue),
@@ -98,6 +97,10 @@ public actor Agent: OpenJarvisAgentRuntime {
         try JSONEncoder().encode(state).write(to: file, options: .atomic)
     }
     public func start(_ text: String) async throws -> Snapshot {
+        try prepareTask(text)
+        return try await run().snapshot
+    }
+    private func prepareTask(_ text: String) throws {
         guard !active, state.status != .approval, state.status != .running else { throw AgentError.busy }
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { throw AgentError.empty }; guard text.count <= 2000 else { throw AgentError.tooLong }
@@ -105,10 +108,9 @@ public actor Agent: OpenJarvisAgentRuntime {
         state.toolUseDenied = RequestToolPolicy.deniesTools(in: text)
         state.memoryAccessDenied = RequestToolPolicy.deniesMemory(in: text)
         state.status = .running
-        return try await run()
     }
     public func resume() async throws -> Snapshot {
-        guard !active, state.status == .running else { throw AgentError.busy }; return try await run()
+        guard !active, state.status == .running else { throw AgentError.busy }; return try await run().snapshot
     }
     public func approve(_ allow: Bool) async throws -> Snapshot {
         guard !active, state.status == .approval, let pending = state.pending, pending.action == "save_memory" else { throw AgentError.noApproval }
@@ -120,7 +122,6 @@ public actor Agent: OpenJarvisAgentRuntime {
         if allow {
             state.notes.append(Note(pending.value))
             state.messages.append(Message("tool", "Memory saved by explicit user approval."))
-            lastToolResults.append(UpstreamToolResult(toolName: "save_memory", content: "Saved after explicit user approval."))
         }
         else { state.memoryWriteDenied = true; state.messages.append(Message("tool", "User declined memory write. Do not request it again in this task.")) }
         state.pending = nil; state.status = .running
@@ -128,7 +129,7 @@ public actor Agent: OpenJarvisAgentRuntime {
             state.messages.append(Message("assistant", allow ? "Memory saved with your approval." : "Memory was not saved."))
             state.status = .complete; try save(); return state
         }
-        return try await run()
+        return try await run().snapshot
     }
     public func cancel() throws -> Snapshot {
         guard !active else { throw AgentError.busy }
@@ -141,7 +142,8 @@ public actor Agent: OpenJarvisAgentRuntime {
     public func eraseAll() throws -> Snapshot {
         guard !active else { throw AgentError.busy }; state = Snapshot(); try save(); return state
     }
-    private func run() async throws -> Snapshot {
+    private func run() async throws -> (snapshot: Snapshot, toolResults: [UpstreamToolResult]) {
+        var toolResults: [UpstreamToolResult] = []
         active = true; defer { active = false }
         do {
             try save()
@@ -199,19 +201,19 @@ public actor Agent: OpenJarvisAgentRuntime {
                     continue
                 }
                 switch d.action {
-                case "reply": state.messages.append(Message("assistant", d.value)); state.status = .complete; try save(); return state
+                case "reply": state.messages.append(Message("assistant", d.value)); state.status = .complete; try save(); return (state, toolResults)
                 case "search_memory":
                     let matches = search(d.value).prefix(5).map(\.text).joined(separator: "\n")
-                    lastToolResults.append(UpstreamToolResult(toolName: "search_memory", content: matches))
+                    toolResults.append(UpstreamToolResult(toolName: "search_memory", content: matches))
                     state.messages.append(Message("tool", "Memory matches: " + matches))
                 case "current_time":
                     let value = ISO8601DateFormatter().string(from: Date())
-                    lastToolResults.append(UpstreamToolResult(toolName: "current_time", content: value))
+                    toolResults.append(UpstreamToolResult(toolName: "current_time", content: value))
                     state.messages.append(Message("tool", value))
                 case "save_memory":
                     if state.memoryWriteDenied == true { state.messages.append(Message("tool", "Memory write blocked: user previously declined.")); try save(); continue }
                     guard !d.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, d.value.count <= 2000 else { throw AgentError.invalidDecision }
-                    state.pending = d; state.status = .approval; try save(); return state
+                    state.pending = d; state.status = .approval; try save(); return (state, toolResults)
                 default: throw AgentError.invalidDecision
                 }
                 try save()

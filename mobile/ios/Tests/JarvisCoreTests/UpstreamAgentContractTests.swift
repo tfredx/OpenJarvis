@@ -10,6 +10,33 @@ private actor ContractScript: Intelligence {
     }
 }
 
+private actor PausedContractScript: Intelligence {
+    private var calls = 0
+    private var waiting: CheckedContinuation<Void, Never>?
+    private var reply: CheckedContinuation<Decision, Never>?
+
+    func decide(prompt: String) async throws -> Decision {
+        calls += 1
+        if calls == 1 { return .init("current_time", "") }
+        guard calls == 2 else { throw AgentError.invalidDecision }
+        return await withCheckedContinuation { continuation in
+            reply = continuation
+            waiting?.resume()
+            waiting = nil
+        }
+    }
+
+    func waitForSecondDecision() async {
+        if reply != nil { return }
+        await withCheckedContinuation { waiting = $0 }
+    }
+
+    func finish() {
+        reply?.resume(returning: .init("reply", "Time obtained"))
+        reply = nil
+    }
+}
+
 private struct RestrictedContractAuthorization: ToolAuthorization, Sendable {
     func permits(_ action: String) -> Bool { action == "reply" || action == "current_time" }
 }
@@ -115,5 +142,28 @@ private struct RestrictedContractAuthorization: ToolAuthorization, Sendable {
         XCTAssertEqual(result.toolResults.map(\.toolName), ["current_time"])
         XCTAssertTrue(result.toolResults[0].success)
         XCTAssertFalse(result.toolResults[0].content.isEmpty)
+    }
+
+    func testBusySubmissionDoesNotDiscardActiveToolResults() async throws {
+        let file = path()
+        defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+        let script = PausedContractScript()
+        let agent = try Agent(engine: script, file: file)
+        let active = Task { try await agent.run(input: "What time is it?", context: nil) }
+
+        await script.waitForSecondDecision()
+        do {
+            _ = try await agent.run(input: "Another request", context: nil)
+            XCTFail("Expected the overlapping task to be rejected")
+        } catch {
+            XCTAssertEqual(error as? AgentError, .busy)
+        }
+        await script.finish()
+
+        let result = try await active.value
+        XCTAssertEqual(result.content, "Time obtained")
+        XCTAssertEqual(result.toolResults.map(\.toolName), ["current_time"])
+        let snapshot = await agent.snapshot()
+        XCTAssertEqual(snapshot.messages.filter { $0.role == "user" }.map(\.text), ["What time is it?"])
     }
 }
