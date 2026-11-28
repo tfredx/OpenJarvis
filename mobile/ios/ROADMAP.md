@@ -9,7 +9,7 @@
 | v0.4.1 | Shadow migration preserves source bytes; recovery journal fails closed | Implemented and previously CI-validated; production cutover remains disabled pending full migration and signed-device protection gates |
 | CI/CD | Required regression/security/device+simulator compile validation and versioned downloadable unsigned release artifacts | Pipeline integrated and validated on prior PRs; release-tag path not exercised |
 | v0.5.0 | Swift-first upstream contracts with local inference, bounded execution and explicit approvals | Adapter merged in PR #27; integrated CI unverified; concrete upstream Rust agent is not linked |
-| v0.6.0 | Scoped native device providers with platform permission and approval tests | Permission-neutral dispatcher/API implemented in PR #28; no provider or OS permission is active; refreshed against PR #27 merge; CI pending |
+| v0.6.0 | Scoped native device providers with platform permission and approval tests | PR #28 capability dispatcher integrated at `6206921f`. Scoped Calendar reader implemented on `feat/ios-scoped-calendar-reader`; unregistered with no OS permission request. CI and device tests pending. |
 | v0.7.0 | Checkpointed background workflows with measured device limits | Not started |
 | v0.8.0 | Additional local models and compute routing based on benchmark evidence | Not started; Foundation Models remains default |
 | v0.9.0 | Inspectable personalization and separately reviewed optional Mac companion | Not started |
@@ -45,4 +45,9 @@ ADR-0009 accepts a Swift adapter using pinned upstream agent contract shapes whi
 
 Never equate compilation or simulator execution with physical-device testing. Preserve historical failures and actual test counts; do not fabricate performance measurements.
 
-The Activity tab on `feat/ios-task-activity` displays and controls the latest task using existing snapshots. CI and device accessibility checks are pending. Persistent task history and background resumption are planned separately.
+
+## PR #33 — task activity
+
+Shows the latest task using real conversation and checkpoint data. Adds expandable outcomes and existing approval, cancellation and recovery operations to the Activity tab. Documents the supported execution path and deferred background options. Independent of #29–#32. Local whitespace and build-script fixtures passed. Swift/Xcode CI, Dynamic Type and VoiceOver validation remain pending. No additional permissions or storage schema changes.
+
+Refreshed against PR #31 integration; required CI pending.

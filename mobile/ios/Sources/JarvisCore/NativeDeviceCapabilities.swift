@@ -67,6 +67,7 @@ public struct NativeDeviceCapabilityDispatcher: Sendable {
     }
 
     public func invoke(capabilityID rawID: String, input: String) async throws -> NativeDeviceCapabilityResult {
+        try Task.checkCancellation()
         guard let capabilityID = NativeDeviceCapabilityID(rawValue: rawID) else {
             throw NativeDeviceCapabilityError.unsupported
         }
@@ -81,7 +82,12 @@ public struct NativeDeviceCapabilityDispatcher: Sendable {
         }
 
         let request = NativeDeviceCapabilityRequest(capability: capabilityID, input: input)
-        guard await approval.approve(request) else { throw NativeDeviceCapabilityError.approvalDeclined }
+        let approved = await approval.approve(request)
+        try Task.checkCancellation()
+        guard approved else { throw NativeDeviceCapabilityError.approvalDeclined }
+        guard authorization.permits(capabilityID.rawValue) else {
+            throw NativeDeviceCapabilityError.denied
+        }
         let result = try await capability.execute(request)
         guard result.content.count <= 16000 else { throw NativeDeviceCapabilityError.invalidResult }
         return result

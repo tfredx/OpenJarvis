@@ -38,6 +38,15 @@ PR #28 defines fixed capability IDs, trusted adapter registration, bounded typed
 
 This workspace is Linux without Swift, Cargo or Xcode. Available local checks are `git diff --check` and `mobile/ios/scripts/test-build-scripts.sh`; these do not replace native CI. PR #27 is merged. PR #28 documentation conflicts are reconciled against the PR #27 merge; its required CI must pass before integration. Next independent engineering increment: scripted inference providers and a deterministic bounded orchestration state machine. SQLite migration remains gated as above. Physical install, signing and on-device test execution require the owner; no current performance result is established.
 
-## Task Activity increment
+## Scoped Calendar reader increment
 
-Baseline `6206921f` (PR #28 integrated). PRs #29–#32 are independent. The Activity tab shows the latest persisted request, expandable tool outcomes and notices, reply, pending memory approval, and available cancellation and recovery controls. Foreground status reflects actual work; timeline rows reflect the latest published snapshot. No new persisted task log is introduced. Local whitespace and build-script checks passed. Native CI and device accessibility review remain open. See `docs/decisions/background-execution-research.md` for API feasibility. Next: drive the timeline from durable action records once checkpoint states are available.
+Baseline `6206921f` (PR #28 integrated). PRs #29 (diagnostics) and #30 (task result isolation) are independent. This branch adds an unregistered EventKit Calendar reader with a maximum seven-day UTC window, at most ten selected calendars, capped summaries and existing full-access checks before and after fetching. It performs no writes and requests no OS access. The dispatcher checks cancellation and app authorization again after awaiting approval. Tests cover cancellation while approval is outstanding and malformed or excessive date ranges.
+
+Local whitespace and build-script checks passed. Swift, native builds and physical access were not tested here. Next: validate Calendar selection and the approval preview, then obtain permission review before enabling the provider and run the signed-device denial, revocation and scope scenarios.
+
+
+## PR #33 — task activity
+
+Shows the latest task using real conversation and checkpoint data. Adds expandable outcomes and existing approval, cancellation and recovery operations to the Activity tab. Documents the supported execution path and deferred background options. Independent of #29–#32. Local whitespace and build-script fixtures passed. Swift/Xcode CI, Dynamic Type and VoiceOver validation remain pending. No additional permissions or storage schema changes.
+
+Refreshed against PR #31 integration; required CI pending.
