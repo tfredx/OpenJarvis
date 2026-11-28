@@ -1,6 +1,6 @@
-# Current handoff — memory retrieval integrated; SQLite cutover remains open
+# Current handoff — memory retrieval integrated; SQLite backend API in validation
 
-Date: 2026-11-27 ET. `ios/main` is `3046f73ffaae9d03ecd84f3bca0c8bc60e74cfc0` after PR #22. PR run 46082211356 and integrated run 46083177104 both passed all seven jobs: 62 portable Swift tests, 10 Rust bridge tests/cross-build, 11 hosted native integration tests, five security audit jobs, unsigned arm64 iPhoneOS and simulator builds, and package/artifact upload. Integrated development artifact 15237619676 contains the unsigned install package. Earlier PR #20 run 46070616432/integrated 46072060277 and PR #21 run 46073658513/integrated 46074641626 also passed.
+Date: 2026-11-28 ET. `ios/main` is `adab8f8a665ba75e79813e82cc38166211345b3a` after PR #23. PR #22 run 46082211356 and integrated run 46083177104 passed all seven jobs: 62 portable Swift tests, 10 Rust bridge tests/cross-build, 11 hosted native integration tests, five security audit jobs, unsigned arm64 iPhoneOS and simulator builds, and package/artifact upload. Integrated development artifact 15237619676 contains the unsigned install package. PR #23 documentation CI run 46084387629 passed; its integrated run 46085721355 is still running. Earlier PR #20 run 46070616432/integrated 46072060277 and PR #21 run 46073658513/integrated 46074641626 also passed.
 
 ## Owner-reported Mac validation
 
@@ -19,6 +19,10 @@ No `ios-vX.Y.Z` tag has been created, so tag-specific version injection and 90-d
 PR #22 adds on-device Apple sentence-embedding ranking with lexical fallback for approved memories, and enforces request-level denials before context assembly and action dispatch. Denied tasks exclude stored notes and prior-task history while retaining allowed current-task tool results. Tests cover paraphrases, unrelated-note rejection, lexical fallback, explicit denials, blocked actions, current-task context and old snapshot decoding. Initial CI exposed a weak token match and review found a context-window edge case; both were corrected. An intermediate update run failed to compile after the test source was truncated during transfer; the complete source was restored before final validation. PR run 46082211356 and integrated run 46083177104 passed all required jobs. Physical-device retesting remains needed to establish whether Tim's reported diagnostics are resolved. This workspace lacks Swift; local checks were `git diff --check` and the build-script fixtures.
 
 JSON remains authoritative until the migration safety gates pass. Do not modify upstream `main`, add network/model downloads, or commit signing material.
+
+## Current increment — transactional SQLite session operations
+
+Branch `feature/ios-sqlite-session-persistence` adds transactional create, rename, select, snapshot-save, delete and explicit erase operations to `SQLiteSessionStore`. Tests cover ordered positions through middle deletion, reopen persistence, unresolved-task restrictions, final-session protection and rollback when activation fails. This backend is not wired into `SessionRepository`, `SessionCoordinator` or app startup; JSON remains the only production store. No source migration, data deletion, file-protection inheritance or live-device behavior is claimed. Local `git diff --check` and build-script fixtures pass; this workspace has no Swift toolchain, so full Swift and native checks must pass in Mac CI before merge. The signed-device file-protection gate remains mandatory before any production cutover.
 
 ## Next — upstream agent adapter
 
