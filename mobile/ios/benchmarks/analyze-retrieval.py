@@ -217,12 +217,14 @@ def main():
                     )
     else:
         print("word-alignment-unavailable: native word or matcher measurements missing")
+    listwise_endorsements = None
     if args.answerability:
         evidence = json.loads(args.answerability.read_text())
         judgments = {row["id"]: row for row in evidence}
         if set(judgments) != {g["id"] for g in groups} or len(judgments) != len(evidence):
             raise SystemExit("Answerability measurements do not match query groups.")
         selected = set()
+        endorsed = set()
         failures = disagreements = 0
         for group in groups:
             row = judgments[group["id"]]
@@ -232,10 +234,13 @@ def main():
                 raise SystemExit("Invalid answerability measurement.")
             failures += row["failures"]
             disagreements += forward != reverse
-            if row["failures"] == 0 and forward is not None and forward == reverse:
-                selected.add(forward)
+            if row["failures"] == 0:
+                endorsed.update(ident for ident in (forward, reverse) if ident is not None)
+                if forward is not None and forward == reverse:
+                    selected.add(forward)
         print("answerability", json.dumps({"failed_verdicts": failures, "order_disagreements": disagreements}))
         if failures == 0:
+            listwise_endorsements = endorsed
             policies["answerability-consensus"] = lambda rs: {r["id"] for r in rs if r["id"] in selected}
         else:
             print("answerability-ineligible: incomplete model evidence")
@@ -270,17 +275,27 @@ def main():
         if any(value is not None and type(value) is not bool for value in grounded.values()):
             raise SystemExit("Invalid grounded verdict.")
 
-        def select_grounded(rs):
+        def select_grounded(rs, endorsements=None):
             approved = approvals(rs)
             if len(approved) <= 1:
                 return set(approved)
             supported = [ident for ident in approved if grounded[ident] is True]
-            return set(supported) if len(supported) == 1 else set()
+            if len(supported) != 1:
+                return set()
+            if endorsements is not None and supported[0] not in endorsements:
+                return set()
+            return {supported[0]}
 
         failed = sum(value is None for value in grounded.values())
         print("grounded", json.dumps({"checked_approvals": len(grounded), "failed_verdicts": failed}))
         if failures == 0 and failed == 0:
             policies["grounded-single-answer"] = select_grounded
+            if listwise_endorsements is not None:
+                # Corroborate an already unique grounded winner. A listwise
+                # endorsement cannot break a tie or replace a rejected note.
+                policies["grounded-listwise-corroborated"] = (
+                    lambda rs: select_grounded(rs, listwise_endorsements)
+                )
         else:
             print("grounded-ineligible: incomplete model evidence")
 

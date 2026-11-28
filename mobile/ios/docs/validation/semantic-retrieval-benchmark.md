@@ -71,3 +71,15 @@ On macOS with Apple Intelligence ready, run `./scripts/benchmark-memory-retrieva
 The owner's macOS 27.3 (26C5047e) run at `9966312d` completed all 60 listwise judgments with zero call failures and 18 order disagreements in 30 query groups. Calibration consensus retrieved 6 of 12 relevant notes with zero false positives and zero no-answer injections. Recall was 50%, below the 65% floor. No candidate advanced to holdout.
 
 The next opt-in experiment uses `./scripts/benchmark-memory-retrieval.sh --pointwise`. It makes 120 local model calls, one fresh session per question and note pair. The model sees no competing notes, note IDs, labels or split. The scorer selects a note only when exactly one is approved for the question. Multiple approvals abstain, and any missing verdict makes this candidate ineligible. The unchanged calibration and holdout gates apply. The command writes `audit/memory-pointwise.json` with synthetic IDs and verdicts. This is an offline benchmark only. It does not change production retrieval or the original native regression.
+
+### Grounded replay on saved Mac evidence
+
+On macOS 27.3 (26C5047e), commit `64c1bf2d` verified 25 ambiguous pointwise approvals with zero failed verdicts. Calibration selected nine relevant notes and one irrelevant note, with three missed relevant notes. Precision was 90%, recall was 75%, and pair false-positive rate was 2.08%. The irrelevant note was selected for a no-answer query, so the unchanged gate rejected the policy before holdout.
+
+Replay with the saved synthetic files from the same corpus, from `mobile/ios`:
+
+```sh
+python3 benchmarks/analyze-retrieval.py --distances audit/memory-distances.json --pointwise audit/memory-pointwise.json --grounded audit/memory-grounded.json --answerability audit/memory-answerability.json
+```
+
+`grounded-listwise-corroborated` keeps unique pointwise approvals. For an ambiguous group, exactly one note must have grounded support and at least one of the saved forward and reversed listwise verdicts must endorse that note. Incomplete model evidence makes this policy ineligible. The replay consumes saved verdicts without invoking Apple models. The policy needs to reject the observed no-answer selection and retain at least eight of the nine correct calibration selections to reach holdout. The existing holdout gate, production behavior and historical native regression are unchanged. Owner replay is pending.
