@@ -8,8 +8,8 @@
 | v0.4.0 | Versioned SQLite migration and retrieval tests | Partial: PR #25 transactional SQLite operations integrated; JSON remains authoritative; PR #25 integrated CI status is unknown here; production cutover is not wired |
 | v0.4.1 | Shadow migration preserves source bytes; recovery journal fails closed | Implemented and previously CI-validated; production cutover remains disabled pending full migration and signed-device protection gates |
 | CI/CD | Required regression/security/device+simulator compile validation and versioned downloadable unsigned release artifacts | Pipeline integrated and validated on prior PRs; release-tag path not exercised |
-| v0.5.0 | Swift-first upstream contracts with local inference, bounded execution and explicit approvals | Adapter implemented in PR #27; branch refresh and required CI pending; concrete upstream Rust agent is not linked |
-| v0.6.0 | Scoped native device providers with platform permission and approval tests | Permission-neutral dispatcher/API implemented in PR #28; no provider or OS permission is active; branch refresh and CI pending |
+| v0.5.0 | Swift-first upstream contracts with local inference, bounded execution and explicit approvals | Adapter merged in PR #27; integrated CI unverified; concrete upstream Rust agent is not linked |
+| v0.6.0 | Scoped native device providers with platform permission and approval tests | Permission-neutral dispatcher/API implemented in PR #28; no provider or OS permission is active; refreshed against PR #27 merge; CI pending |
 | v0.7.0 | Checkpointed background workflows with measured device limits | Not started |
 | v0.8.0 | Additional local models and compute routing based on benchmark evidence | Not started; Foundation Models remains default |
 | v0.9.0 | Inspectable personalization and separately reviewed optional Mac companion | Not started |
@@ -27,7 +27,7 @@ The versioned IPA workflow produces unsigned artifacts. The release-tag path and
 
 ## Integration and dependency rules
 
-PR #26 diagnostics is integrated. PR #27 and PR #28 are open and were based on `ede3b22`; refresh each feature branch against the current integration head `8277355` with normal merge commits. Preserve each PR's scope and reconcile shared documentation. Do not merge without complete passing required checks, including simulator and iPhoneOS compilation, security/regression validation and artifact integrity.
+PR #26 diagnostics and PR #27 Swift-first adapter are integrated. PR #28 is refreshed against `84944000710a716af3862adedd7e5ba91bd15a7b`. Preserve scope and require complete passing required checks before merging.
 
 Keep SQLite JSON-to-database production cutover disabled until the foundation's integrated CI is verified and migration interruption, readback, rollback-after-write, backup exclusion, sidecar file protection and signed-device data protection pass. Never restore an outdated JSON source after SQLite writes without preserving later data.
 
@@ -37,7 +37,7 @@ ADR-0009 accepts a Swift adapter using pinned upstream agent contract shapes whi
 
 ## Next executable work
 
-1. Refresh and push normal merge commits for PRs #27 and #28; then await their complete CI results without repeatedly polling queued runners.
+1. Verify PR #27 integrated CI and PR #28 refreshed-head CI without repeatedly polling queued runners.
 2. Add deterministic scripted intelligence-provider tests and explicit failure classification to the diagnostics/orchestration path.
 3. Implement migration-state/recovery fault injection only after verified SQLite foundation CI; keep production cutover disabled until signed-device protections are established.
 4. Implement one native provider at a time, beginning with read-only Calendar, after scoped permission and approval review.
