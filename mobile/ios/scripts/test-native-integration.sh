@@ -47,4 +47,4 @@ xcodebuild -xctestrun "${configurations[0]}" -destination "platform=iOS Simulato
   -parallel-testing-enabled NO -resultBundlePath "$RESULT" \
   test-without-building 2>&1 | tee audit/native-integration.log
 grep -Eq 'Executed [1-9][0-9]* tests?, with 0 failures' audit/native-integration.log
-grep -Fq '** TEST SUCCEEDED **' audit/native-integration.log
+grep -Fq '** TEST EXECUTE SUCCEEDED **' audit/native-integration.log

@@ -7,3 +7,5 @@ The test script requires fresh simulator derived data and exactly one generated 
 Local validation uses shell build fixtures and whitespace checks. Xcode validation must demonstrate successful unsigned simulator compilation and hosted XCTest, platform-specific package verification, and an unsigned device IPA before integration.
 
 Run [46101262104](https://github.com/tfredx/OpenJarvis/actions/runs/46101262104) confirmed Actions resumed. All 83 Swift tests, five security jobs, 10 Rust bridge tests and the unsigned iPhoneOS build passed. The simulator step stopped before compilation because macOS Bash treated the empty development version array as unbound under nounset. The corrected script uses one nonempty build argument array for both development and version-tag builds. The initial run produced diagnostics, with no development IPA.
+
+Run [46101689938](https://github.com/tfredx/OpenJarvis/actions/runs/46101689938) compiled the simulator and passed all hosted tests. The shell gate expected the combined build/test success banner. The split test action emits `TEST EXECUTE SUCCEEDED`; the script now requires that banner alongside the nonzero, zero-failure test count.
