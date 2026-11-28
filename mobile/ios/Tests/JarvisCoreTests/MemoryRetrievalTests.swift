@@ -2,6 +2,23 @@ import XCTest
 @testable import JarvisCore
 
 final class MemoryRetrievalTests: XCTestCase {
+    func testVectorCosineUsesDocumentedScaleAndRejectsInvalidVectors() throws {
+        let distance = try XCTUnwrap(OnDeviceMemorySemanticMatcher.cosineDistance([1, 0], [0.5, sqrt(0.75)]))
+        XCTAssertEqual(distance, 0.5, accuracy: 1e-12)
+        XCTAssertEqual(OnDeviceMemorySemanticMatcher.cosineDistance([1], [-1]), 2)
+        XCTAssertNil(OnDeviceMemorySemanticMatcher.cosineDistance([0], [1]))
+        XCTAssertNil(OnDeviceMemorySemanticMatcher.cosineDistance([.nan], [1]))
+        XCTAssertNil(OnDeviceMemorySemanticMatcher.cosineDistance([1], [1, 2]))
+    }
+
+    func testTermCoverageCombinesExactAndStrongAssociationsWithoutTreatingUnknownAsMatch() throws {
+        let coverage = try XCTUnwrap(MemoryRetrieval.wordCoverage(
+            terms: ["hydration", "seed", "unknown"], note: "Seed needs water.",
+            distance: { query, note in query == "hydration" && note == "water" ? 0.325 : nil }
+        ))
+        XCTAssertEqual(coverage, 1.25 / 3, accuracy: 1e-12)
+    }
+
     func testSemanticDistanceFindsParaphraseAndRejectsUnrelatedNote() {
         let germination = Note("The sprouting process starts after hydration awakens an embryo.")
         let battery = Note("A battery stores chemical energy and converts it into electrical energy.")

@@ -1,0 +1,652 @@
+[
+  {
+    "id": "rep-1",
+    "query": "Which drawer holds the spare thermometer?",
+    "candidates": [
+      {
+        "id": "rep-1-1",
+        "text": "Drawer C has a brass handle.",
+        "relevant": false
+      },
+      {
+        "id": "rep-1-2",
+        "text": "The backup temperature probe is in drawer C.",
+        "relevant": true
+      },
+      {
+        "id": "rep-1-3",
+        "text": "The spare stopwatch is in drawer B.",
+        "relevant": false
+      },
+      {
+        "id": "rep-1-4",
+        "text": "The thermometer needs a battery.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-2",
+    "query": "Who opens the reading room on Mondays?",
+    "candidates": [
+      {
+        "id": "rep-2-1",
+        "text": "Eli cleans the lobby on Tuesday.",
+        "relevant": false
+      },
+      {
+        "id": "rep-2-2",
+        "text": "Pat unlocks it on Fridays.",
+        "relevant": false
+      },
+      {
+        "id": "rep-2-3",
+        "text": "Eli unlocks the reading room every Monday.",
+        "relevant": true
+      },
+      {
+        "id": "rep-2-4",
+        "text": "The reading room has twelve desks.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-3",
+    "query": "Where can I collect the repaired violin?",
+    "candidates": [
+      {
+        "id": "rep-3-1",
+        "text": "The violin lesson takes place downstairs.",
+        "relevant": false
+      },
+      {
+        "id": "rep-3-2",
+        "text": "Pick up the repaired instrument at the luthier's upstairs counter.",
+        "relevant": true
+      },
+      {
+        "id": "rep-3-3",
+        "text": "The upstairs counter closes at noon.",
+        "relevant": false
+      },
+      {
+        "id": "rep-3-4",
+        "text": "Drop off broken violins at reception.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-4",
+    "query": "Which battery fits the kitchen scale?",
+    "candidates": [
+      {
+        "id": "rep-4-1",
+        "text": "My kitchen scale takes a CR2032 cell.",
+        "relevant": true
+      },
+      {
+        "id": "rep-4-2",
+        "text": "Batteries are sold in pairs.",
+        "relevant": false
+      },
+      {
+        "id": "rep-4-3",
+        "text": "The scale is on the kitchen shelf.",
+        "relevant": false
+      },
+      {
+        "id": "rep-4-4",
+        "text": "The bathroom scale takes AAA cells.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-5",
+    "query": "How long should my clay tiles dry?",
+    "candidates": [
+      {
+        "id": "rep-5-1",
+        "text": "The kiln is cold.",
+        "relevant": false
+      },
+      {
+        "id": "rep-5-2",
+        "text": "Clay pots sit on the upper rack.",
+        "relevant": false
+      },
+      {
+        "id": "rep-5-3",
+        "text": "My clay tiles need two days of drying.",
+        "relevant": true
+      },
+      {
+        "id": "rep-5-4",
+        "text": "The tile glaze dries in one hour.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-6",
+    "query": "Which stop serves the observatory?",
+    "candidates": [
+      {
+        "id": "rep-6-1",
+        "text": "Get off at Lantern Square for the observatory.",
+        "relevant": true
+      },
+      {
+        "id": "rep-6-2",
+        "text": "The bus leaves at eight.",
+        "relevant": false
+      },
+      {
+        "id": "rep-6-3",
+        "text": "The observatory has two domes.",
+        "relevant": false
+      },
+      {
+        "id": "rep-6-4",
+        "text": "Lantern Lane serves the stadium.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-7",
+    "query": "How do I label borrowed lenses?",
+    "candidates": [
+      {
+        "id": "rep-7-1",
+        "text": "The camera case is padded.",
+        "relevant": false
+      },
+      {
+        "id": "rep-7-2",
+        "text": "Owned lenses get white tags.",
+        "relevant": false
+      },
+      {
+        "id": "rep-7-3",
+        "text": "Borrowed tripods get red tags.",
+        "relevant": false
+      },
+      {
+        "id": "rep-7-4",
+        "text": "Attach a yellow inventory tag to each lens on loan.",
+        "relevant": true
+      }
+    ]
+  },
+  {
+    "id": "rep-8",
+    "query": "Which crate carries the blue banners?",
+    "candidates": [
+      {
+        "id": "rep-8-1",
+        "text": "The blue ribbons travel in crate L.",
+        "relevant": false
+      },
+      {
+        "id": "rep-8-2",
+        "text": "The red banners travel separately.",
+        "relevant": false
+      },
+      {
+        "id": "rep-8-3",
+        "text": "The blue banners travel in crate K.",
+        "relevant": true
+      },
+      {
+        "id": "rep-8-4",
+        "text": "Crate K has wheels.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-9",
+    "query": "When may guests enter the greenhouse?",
+    "candidates": [
+      {
+        "id": "rep-9-1",
+        "text": "Visitors can enter the greenhouse after ten in the morning.",
+        "relevant": true
+      },
+      {
+        "id": "rep-9-2",
+        "text": "The greenhouse has glass doors.",
+        "relevant": false
+      },
+      {
+        "id": "rep-9-3",
+        "text": "Staff enter at seven.",
+        "relevant": false
+      },
+      {
+        "id": "rep-9-4",
+        "text": "The guest cottage opens at nine.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-10",
+    "query": "What should I serve with pear cake?",
+    "candidates": [
+      {
+        "id": "rep-10-1",
+        "text": "My pairing note calls for plain yogurt beside the pear cake.",
+        "relevant": true
+      },
+      {
+        "id": "rep-10-2",
+        "text": "Pear juice is in the fridge.",
+        "relevant": false
+      },
+      {
+        "id": "rep-10-3",
+        "text": "The apple cake gets whipped cream.",
+        "relevant": false
+      },
+      {
+        "id": "rep-10-4",
+        "text": "Cake plates are in the cupboard.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-11",
+    "query": "How do I restart the fountain pump?",
+    "candidates": [
+      {
+        "id": "rep-11-1",
+        "text": "Clean the fountain cover weekly.",
+        "relevant": false
+      },
+      {
+        "id": "rep-11-2",
+        "text": "The pool pump restarts on a timer.",
+        "relevant": false
+      },
+      {
+        "id": "rep-11-3",
+        "text": "The switchboard is locked.",
+        "relevant": false
+      },
+      {
+        "id": "rep-11-4",
+        "text": "Use the reset button under the fountain pump cover.",
+        "relevant": true
+      }
+    ]
+  },
+  {
+    "id": "rep-12",
+    "query": "What is the deadline for the mural sketch?",
+    "candidates": [
+      {
+        "id": "rep-12-1",
+        "text": "The mural wall faces south.",
+        "relevant": false
+      },
+      {
+        "id": "rep-12-2",
+        "text": "The sculpture sketch is due in April.",
+        "relevant": false
+      },
+      {
+        "id": "rep-12-3",
+        "text": "Submit the mural sketch by March third.",
+        "relevant": true
+      },
+      {
+        "id": "rep-12-4",
+        "text": "Finish the mural paintwork by May.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-13",
+    "query": "Which cabin has the step-free shower?",
+    "candidates": [
+      {
+        "id": "rep-13-1",
+        "text": "Cabin Ash has a step-free porch.",
+        "relevant": false
+      },
+      {
+        "id": "rep-13-2",
+        "text": "The birch trail is muddy.",
+        "relevant": false
+      },
+      {
+        "id": "rep-13-3",
+        "text": "The shower blocks close at night.",
+        "relevant": false
+      },
+      {
+        "id": "rep-13-4",
+        "text": "Cabin Birch has a shower with level entry.",
+        "relevant": true
+      }
+    ]
+  },
+  {
+    "id": "rep-14",
+    "query": "Where should the empty oxygen-free sample vial go?",
+    "candidates": [
+      {
+        "id": "rep-14-1",
+        "text": "Full sample vials stay in the rack.",
+        "relevant": false
+      },
+      {
+        "id": "rep-14-2",
+        "text": "Empty water bottles go in recycling.",
+        "relevant": false
+      },
+      {
+        "id": "rep-14-3",
+        "text": "The amber bin is half full.",
+        "relevant": false
+      },
+      {
+        "id": "rep-14-4",
+        "text": "Return the empty oxygen-free vial to the labeled amber bin.",
+        "relevant": true
+      }
+    ]
+  },
+  {
+    "id": "rep-15",
+    "query": "Whose initials belong on the final proof?",
+    "candidates": [
+      {
+        "id": "rep-15-1",
+        "text": "The copy editor orders stationery.",
+        "relevant": false
+      },
+      {
+        "id": "rep-15-2",
+        "text": "The copy editor initials the final proof.",
+        "relevant": true
+      },
+      {
+        "id": "rep-15-3",
+        "text": "The author initials the draft.",
+        "relevant": false
+      },
+      {
+        "id": "rep-15-4",
+        "text": "The proof uses wide margins.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-16",
+    "query": "Which screws fit the narrow hinge?",
+    "candidates": [
+      {
+        "id": "rep-16-1",
+        "text": "Brass washers are in the tin.",
+        "relevant": false
+      },
+      {
+        "id": "rep-16-2",
+        "text": "The narrow hinge was delivered yesterday.",
+        "relevant": false
+      },
+      {
+        "id": "rep-16-3",
+        "text": "Long screws fit the wide hinge.",
+        "relevant": false
+      },
+      {
+        "id": "rep-16-4",
+        "text": "Use the short brass screws for the narrow hinge.",
+        "relevant": true
+      }
+    ]
+  },
+  {
+    "id": "rep-17",
+    "query": "Where is the replacement latch for locker eight?",
+    "candidates": [
+      {
+        "id": "rep-17-1",
+        "text": "A spare padlock is in the van.",
+        "relevant": false
+      },
+      {
+        "id": "rep-17-2",
+        "text": "The lockers have blue doors.",
+        "relevant": false
+      },
+      {
+        "id": "rep-17-3",
+        "text": "Locker eight has a broken latch.",
+        "relevant": false
+      },
+      {
+        "id": "rep-17-4",
+        "text": "The replacement latch for locker six is in the desk.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-18",
+    "query": "When does the evening workshop finish?",
+    "candidates": [
+      {
+        "id": "rep-18-1",
+        "text": "The morning workshop finishes at eleven.",
+        "relevant": false
+      },
+      {
+        "id": "rep-18-2",
+        "text": "Evening students use room B.",
+        "relevant": false
+      },
+      {
+        "id": "rep-18-3",
+        "text": "The evening workshop begins at six.",
+        "relevant": false
+      },
+      {
+        "id": "rep-18-4",
+        "text": "The workshop closes registration today.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-19",
+    "query": "Which ticket did I buy?",
+    "candidates": [
+      {
+        "id": "rep-19-1",
+        "text": "The museum sells day tickets.",
+        "relevant": false
+      },
+      {
+        "id": "rep-19-2",
+        "text": "The ticket printer is offline.",
+        "relevant": false
+      },
+      {
+        "id": "rep-19-3",
+        "text": "My friend bought a balcony ticket.",
+        "relevant": false
+      },
+      {
+        "id": "rep-19-4",
+        "text": "The evening show has reserved seats.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-20",
+    "query": "What is the total including postage?",
+    "candidates": [
+      {
+        "id": "rep-20-1",
+        "text": "Postage depends on the destination.",
+        "relevant": false
+      },
+      {
+        "id": "rep-20-2",
+        "text": "The box weighs a pound.",
+        "relevant": false
+      },
+      {
+        "id": "rep-20-3",
+        "text": "The item alone costs nine credits.",
+        "relevant": false
+      },
+      {
+        "id": "rep-20-4",
+        "text": "Payment is due tomorrow.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-21",
+    "query": "Which locker code opens the east annex?",
+    "candidates": [
+      {
+        "id": "rep-21-1",
+        "text": "The main office uses 317.",
+        "relevant": false
+      },
+      {
+        "id": "rep-21-2",
+        "text": "The west annex uses code 512.",
+        "relevant": false
+      },
+      {
+        "id": "rep-21-3",
+        "text": "The east annex locker was replaced.",
+        "relevant": false
+      },
+      {
+        "id": "rep-21-4",
+        "text": "The annex has a keypad.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-22",
+    "query": "Who approved the revised lighting budget?",
+    "candidates": [
+      {
+        "id": "rep-22-1",
+        "text": "Dana approved the revised sound budget.",
+        "relevant": false
+      },
+      {
+        "id": "rep-22-2",
+        "text": "Casey approved the initial lighting budget.",
+        "relevant": false
+      },
+      {
+        "id": "rep-22-3",
+        "text": "The stage opens tomorrow.",
+        "relevant": false
+      },
+      {
+        "id": "rep-22-4",
+        "text": "The revised lighting budget is on file.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-23",
+    "query": "What color was it?",
+    "candidates": [
+      {
+        "id": "rep-23-1",
+        "text": "The bag comes in three colors.",
+        "relevant": false
+      },
+      {
+        "id": "rep-23-2",
+        "text": "Paint is sold downstairs.",
+        "relevant": false
+      },
+      {
+        "id": "rep-23-3",
+        "text": "The tent is orange.",
+        "relevant": false
+      },
+      {
+        "id": "rep-23-4",
+        "text": "My old bicycle was blue.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-24",
+    "query": "Which platform serves the coastal train tonight?",
+    "candidates": [
+      {
+        "id": "rep-24-1",
+        "text": "The coastal train is running late.",
+        "relevant": false
+      },
+      {
+        "id": "rep-24-2",
+        "text": "Yesterday the coastal train used platform four.",
+        "relevant": false
+      },
+      {
+        "id": "rep-24-3",
+        "text": "Platform four has a shelter.",
+        "relevant": false
+      },
+      {
+        "id": "rep-24-4",
+        "text": "Tonight the inland train uses platform two.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "rep-25",
+    "query": "When should the repaired clock be collected?",
+    "candidates": [
+      {
+        "id": "rep-25-1",
+        "text": "The repaired lamp is ready at noon.",
+        "relevant": false
+      },
+      {
+        "id": "rep-25-2",
+        "text": "The repair estimate is on file.",
+        "relevant": false
+      },
+      {
+        "id": "rep-25-3",
+        "text": "The clock shop has a collection desk.",
+        "relevant": false
+      },
+      {
+        "id": "rep-25-4",
+        "text": "The clock was dropped off on Friday.",
+        "relevant": false
+      }
+    ]
+  }
+]

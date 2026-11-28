@@ -1,0 +1,652 @@
+[
+  {
+    "id": "fresh-1",
+    "query": "Where should I return the rented kayak?",
+    "candidates": [
+      {
+        "id": "fresh-1-1",
+        "text": "Leave the rental kayak at the west dock.",
+        "relevant": true
+      },
+      {
+        "id": "fresh-1-2",
+        "text": "Collect the kayak at the east dock.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-1-3",
+        "text": "Return rented bicycles to the shed.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-1-4",
+        "text": "The west dock closes at dusk.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-2",
+    "query": "When is the pottery pickup?",
+    "candidates": [
+      {
+        "id": "fresh-2-1",
+        "text": "The pottery class starts Tuesday.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-2-2",
+        "text": "Finished ceramics can be collected on Saturday morning.",
+        "relevant": true
+      },
+      {
+        "id": "fresh-2-3",
+        "text": "Clay deliveries arrive Friday.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-2-4",
+        "text": "The shop opens late today.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-3",
+    "query": "What flour do I use for rye crackers?",
+    "candidates": [
+      {
+        "id": "fresh-3-1",
+        "text": "My rolls use bread flour.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-3-2",
+        "text": "Dark rye flour is sold downtown.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-3-3",
+        "text": "My rye crackers use dark rye flour.",
+        "relevant": true
+      },
+      {
+        "id": "fresh-3-4",
+        "text": "Crackers bake for fifteen minutes.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-4",
+    "query": "Who holds the archive key?",
+    "candidates": [
+      {
+        "id": "fresh-4-1",
+        "text": "Robin keeps the reception key.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-4-2",
+        "text": "Morgan works downstairs.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-4-3",
+        "text": "The archive closes at noon.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-4-4",
+        "text": "Morgan keeps the key to the archive.",
+        "relevant": true
+      }
+    ]
+  },
+  {
+    "id": "fresh-5",
+    "query": "How should the wool scarf dry?",
+    "candidates": [
+      {
+        "id": "fresh-5-1",
+        "text": "Lay the wool scarf flat on a towel to dry.",
+        "relevant": true
+      },
+      {
+        "id": "fresh-5-2",
+        "text": "Hang the cotton scarf outside.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-5-3",
+        "text": "The wool scarf is blue.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-5-4",
+        "text": "Fold dry towels in half.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-6",
+    "query": "Which train serves Oak Pier?",
+    "candidates": [
+      {
+        "id": "fresh-6-1",
+        "text": "The blue line serves Oak Park.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-6-2",
+        "text": "The amber line stops at Oak Pier.",
+        "relevant": true
+      },
+      {
+        "id": "fresh-6-3",
+        "text": "Oak Pier has a cafe.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-6-4",
+        "text": "The amber bus stops at the museum.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-7",
+    "query": "What time is choir rehearsal?",
+    "candidates": [
+      {
+        "id": "fresh-7-1",
+        "text": "Choir performances start at eight.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-7-2",
+        "text": "The dance rehearsal starts at six.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-7-3",
+        "text": "Choir practice begins at seven on Tuesday evening.",
+        "relevant": true
+      },
+      {
+        "id": "fresh-7-4",
+        "text": "The hall was painted yesterday.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-8",
+    "query": "Which shelf holds my spare filters?",
+    "candidates": [
+      {
+        "id": "fresh-8-1",
+        "text": "The used filters are in the garage.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-8-2",
+        "text": "Coffee beans occupy the top shelf.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-8-3",
+        "text": "The pantry has a sliding door.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-8-4",
+        "text": "My replacement filters sit on the second pantry shelf.",
+        "relevant": true
+      }
+    ]
+  },
+  {
+    "id": "fresh-9",
+    "query": "How do I renew the studio pass?",
+    "candidates": [
+      {
+        "id": "fresh-9-1",
+        "text": "Renew studio access at the front desk with your membership card.",
+        "relevant": true
+      },
+      {
+        "id": "fresh-9-2",
+        "text": "The gym pass renews online.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-9-3",
+        "text": "The studio is open Mondays.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-9-4",
+        "text": "Store the membership card in its sleeve.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-10",
+    "query": "What size is the guest bed?",
+    "candidates": [
+      {
+        "id": "fresh-10-1",
+        "text": "The loft bed is a twin.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-10-2",
+        "text": "The guest bedroom has a queen mattress.",
+        "relevant": true
+      },
+      {
+        "id": "fresh-10-3",
+        "text": "The guest towels are large.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-10-4",
+        "text": "The guest room faces south.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-11",
+    "query": "Which entrance takes deliveries after noon?",
+    "candidates": [
+      {
+        "id": "fresh-11-1",
+        "text": "Morning deliveries use the front desk.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-11-2",
+        "text": "Visitors enter at reception.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-11-3",
+        "text": "Afternoon deliveries go through the rear gate.",
+        "relevant": true
+      },
+      {
+        "id": "fresh-11-4",
+        "text": "The rear gate is painted red.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-12",
+    "query": "Where is my blue umbrella?",
+    "candidates": [
+      {
+        "id": "fresh-12-1",
+        "text": "My red umbrella is in the car.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-12-2",
+        "text": "I bought a blue raincoat yesterday.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-12-3",
+        "text": "The coatroom is upstairs.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-12-4",
+        "text": "I left my blue umbrella in the coatroom.",
+        "relevant": true
+      }
+    ]
+  },
+  {
+    "id": "fresh-13",
+    "query": "Which team reviews bridge drawings?",
+    "candidates": [
+      {
+        "id": "fresh-13-1",
+        "text": "The structures group reviews bridge plans.",
+        "relevant": true
+      },
+      {
+        "id": "fresh-13-2",
+        "text": "The drainage group reviews sewer plans.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-13-3",
+        "text": "Bridge drawings are due Thursday.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-13-4",
+        "text": "The structures group moved offices.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-14",
+    "query": "What is the pickup code for parcel Delta?",
+    "candidates": [
+      {
+        "id": "fresh-14-1",
+        "text": "Parcel Echo uses 7318.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-14-2",
+        "text": "Parcel Delta has pickup code 7314.",
+        "relevant": true
+      },
+      {
+        "id": "fresh-14-3",
+        "text": "Delta is ready for pickup.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-14-4",
+        "text": "The locker is next to reception.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-15",
+    "query": "When does the winter ferry leave?",
+    "candidates": [
+      {
+        "id": "fresh-15-1",
+        "text": "The summer ferry leaves at ten.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-15-2",
+        "text": "Winter tickets cost six credits.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-15-3",
+        "text": "In winter the ferry departs at half past nine.",
+        "relevant": true
+      },
+      {
+        "id": "fresh-15-4",
+        "text": "The terminal opens at seven.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-16",
+    "query": "How should I store the unopened ink?",
+    "candidates": [
+      {
+        "id": "fresh-16-1",
+        "text": "Used ink goes in the collection box.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-16-2",
+        "text": "The supply cabinet has two doors.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-16-3",
+        "text": "Store spare paper flat.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-16-4",
+        "text": "Keep sealed ink cartridges upright in the supply cabinet.",
+        "relevant": true
+      }
+    ]
+  },
+  {
+    "id": "fresh-17",
+    "query": "Who signed the revised stage plan?",
+    "candidates": [
+      {
+        "id": "fresh-17-1",
+        "text": "The old stage plan was signed by Pat.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-17-2",
+        "text": "The revised lighting plan was signed by Drew.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-17-3",
+        "text": "The revised stage plan is on file.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-17-4",
+        "text": "A stage inspection is booked.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-18",
+    "query": "How much was the return fare?",
+    "candidates": [
+      {
+        "id": "fresh-18-1",
+        "text": "I paid twelve for the outbound trip.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-18-2",
+        "text": "The return fare included luggage.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-18-3",
+        "text": "The timetable changed Friday.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-18-4",
+        "text": "The return ticket is in the drawer.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-19",
+    "query": "Where is it kept?",
+    "candidates": [
+      {
+        "id": "fresh-19-1",
+        "text": "The spare rope is in the shed.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-19-2",
+        "text": "The pump is under the stairs.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-19-3",
+        "text": "A locker is near the hall.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-19-4",
+        "text": "The desk has two keys.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-20",
+    "query": "When will the west lift reopen?",
+    "candidates": [
+      {
+        "id": "fresh-20-1",
+        "text": "The east lift reopens at noon.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-20-2",
+        "text": "The west lift was closed yesterday.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-20-3",
+        "text": "The west stairs are open.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-20-4",
+        "text": "The lift inspection was requested.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-21",
+    "query": "Which recipe contains no sesame?",
+    "candidates": [
+      {
+        "id": "fresh-21-1",
+        "text": "The roll contains sesame.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-21-2",
+        "text": "The loaf is dairy free.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-21-3",
+        "text": "The flatbread contains no peanuts.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-21-4",
+        "text": "The kitchen closes at six.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-22",
+    "query": "What is the code?",
+    "candidates": [
+      {
+        "id": "fresh-22-1",
+        "text": "The parcel locker uses 7711.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-22-2",
+        "text": "The workshop door uses 2844.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-22-3",
+        "text": "The gate code was changed.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-22-4",
+        "text": "The hallway was cleaned.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-23",
+    "query": "Which person owns the red canoe?",
+    "candidates": [
+      {
+        "id": "fresh-23-1",
+        "text": "Sam owns the red kayak.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-23-2",
+        "text": "The red canoe was repaired by Jules.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-23-3",
+        "text": "Kim owns the green canoe.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-23-4",
+        "text": "The dock has three boats.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-24",
+    "query": "How many badges are still available?",
+    "candidates": [
+      {
+        "id": "fresh-24-1",
+        "text": "Thirty badges were printed.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-24-2",
+        "text": "Some badges have been claimed.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-24-3",
+        "text": "Five posters remain.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-24-4",
+        "text": "The badge desk closed early.",
+        "relevant": false
+      }
+    ]
+  },
+  {
+    "id": "fresh-25",
+    "query": "Which bus goes to Cedar Clinic on Sundays?",
+    "candidates": [
+      {
+        "id": "fresh-25-1",
+        "text": "Bus eight serves Cedar Clinic on weekdays only.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-25-2",
+        "text": "The Sunday bus stops at Cedar Library.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-25-3",
+        "text": "Cedar Clinic has a new sign.",
+        "relevant": false
+      },
+      {
+        "id": "fresh-25-4",
+        "text": "Sunday service ends early.",
+        "relevant": false
+      }
+    ]
+  }
+]

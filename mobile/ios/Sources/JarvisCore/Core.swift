@@ -4,10 +4,6 @@ public struct Message: Codable, Sendable, Equatable, Identifiable {
     public let id: UUID; public let role: String; public let text: String
     public init(_ role: String, _ text: String) { id = UUID(); self.role = role; self.text = text }
 }
-public struct Note: Codable, Sendable, Equatable, Identifiable {
-    public let id: UUID; public let text: String
-    public init(_ text: String) { id = UUID(); self.text = text }
-}
 public struct Decision: Codable, Sendable, Equatable {
     public let action: String; public let value: String
     public init(_ action: String, _ value: String) { self.action = action; self.value = value }

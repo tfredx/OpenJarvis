@@ -1,0 +1,101 @@
+# Apple sentence embedding regression and relevance benchmark
+
+## Recorded failure
+
+On Apple Silicon with Xcode 27.2 build 27B52, the owner ran commit `f3f7570cb5f7963cd4d156602f2edc6d9c2e4cf5` twice. Both runs executed 84 Swift tests with 83 passing. `NativeMemoryEmbeddingTests.testSentenceEmbeddingRanksSeedGerminationCloserThanBattery` passed relative ordering and failed the absolute assertion at MemoryRetrievalTests.swift:58. The observed distance was 1.0654124021530151 and the required bound was 0.45. The original test and threshold remain in force.
+
+## What the implementation does
+
+The matcher requests Apple's default English sentence embedding on every lookup. It does not pin a revision, identify query language or normalize input. It uses the original query and note strings. The corrective branch computes cosine distance directly from the sentence vectors and retains the framework string distance separately for benchmark replay. Apple documents cosine distance as one minus cosine similarity in the range 0 to 2. Lower means closer. The observed sentence output on the runner used a different scale, as shown below. Availability is optional and nonfinite or out-of-range values now count as unavailable. The probes report supported, current and actual revision, dimension, operating system, self-distance, raw distance, vector-derived cosine distance and the sample coverage of both vectors. Results also compare canonical Unicode plus collapsed whitespace against the current raw input. Revision and asset availability are independent of the Xcode version number.
+
+The existing ranker uses the greater of lexical coverage and a capped semantic score. A single overlapping term can therefore admit a negative even when the native score is unavailable or above the cutoff. The benchmark evaluates the automatic context cap of three. It does not estimate the separate five-item explicit search limit. Requests denying memory remain blocked before retrieval.
+
+## Reproduce without Actions
+
+From the PR checkout on macOS with the intended Xcode selected:
+
+```bash
+cd mobile/ios
+./scripts/benchmark-memory-retrieval.sh
+swift test --filter '^JarvisCoreTests.MemoryRetrievalTests'
+swift test --filter NativeMemoryEmbeddingTests
+```
+
+The benchmark writes `audit/memory-benchmark-source.txt`, `audit/memory-distances.json`, and `audit/memory-benchmark.txt`. A native run prints metadata, 30 queries and 120 unique labeled pairs, positive and negative distance percentiles, the exact germination scores, missing counts and per-policy confusion counts and rates. Undefined precision or recall is JSON null. A missing native embedding produces explicit missing-data output and exits nonzero. Native acceptance runs separately from the deterministic mocked tests. Continue to `swift test`, then `./scripts/setup-ios.sh --native` and hosted simulator validation after the relevance policy and original native acceptance regression are resolved.
+
+For the portable lexical baseline, run `./scripts/benchmark-memory-retrieval.sh --lexical-only`. The corpus uses four manually labeled candidates per query, query-level calibration and holdout, and three no-answer groups per split. The lexical baseline on this corpus retrieved 5 TP / 23 FP in calibration and 11 TP / 27 FP in holdout, for precision 17.86% / 28.95%, recall 41.67% / 91.67%, FPR 47.92% / 56.25% and FNR 58.33% / 8.33%. These results describe synthetic cases and are not native semantic measurements.
+
+## Hosted native evidence
+
+[Mobile iOS CI run 46106681604](https://github.com/tfredx/OpenJarvis/actions/runs/46106681604) measured the synthetic corpus on arm64 macOS 27.0.1 (26A434), Xcode 27.1 (27A9275), English embedding revision 1, dimension 512. All 120 pairs returned distances. The probe's self-distance was zero. The original assertion reproduced the owner's exact value. The [native diagnostics ZIP](https://github.com/tfredx/OpenJarvis/actions/runs/46106681604/artifacts/15247178492) contains independent raw readings, revision metadata and the unmodified regression log.
+
+| Measurement | Relevant pairs (24) | Irrelevant pairs (96) |
+| --- | --- | --- |
+| Framework distance min / median / max | 0.962878 / 1.101164 / 1.305291 | 0.794519 / 1.183024 / 1.362074 |
+| Vector cosine distance min / median / max | 0.463567 / 0.606281 / 0.851893 | 0.315630 / 0.699773 / 0.927622 |
+
+For all pairs, squaring the framework distance and dividing by two reproduced independently computed vector cosine distance within 0.000000624. This is consistent with chord distance between unit vectors on this revision. It is an observed relationship, not a guarantee for other revisions. NFC and whitespace normalization produced identical distances for this corpus, including the two whitespace stress queries. The germination and battery framework distances were 1.065412 and 1.265337, respectively. Their vector cosine distances were 0.567552 and 0.800539. Metric conversion alone still fails the preserved 0.45 germination bound. The distributions overlap substantially on either scale.
+
+On the calibration split a framework cutoff of 1.15 had 28.00% precision, 58.33% recall, 37.50% FPR and 41.67% FNR, with injection on all three no-answer queries. A vector cosine cutoff of 0.65 had 26.09% precision, 50.00% recall, 35.42% FPR and 50.00% FNR. Rescoring the downloaded observations with both scales found no candidate that met calibration criteria, so no candidate was carried into holdout. CI passed the portable and five security jobs, then stopped on the original native assertion ahead of device and simulator builds.
+
+## Policy decision and device diagnosis
+
+Evaluate absolute cutoffs and top-one score floors with relative margins and confidence abstention, with or without lexical fusion, on both distance scales. Choose one candidate using only calibration data, requiring precision at least 90%, recall at least 65%, pair false-positive rate at most 5%, and no injection for no-answer queries. Rank qualifying candidates by recall, then lowest false-positive rate. Apply the same gates on holdout without retuning. If none qualifies, leave the production policy unchanged and collect more representative evidence. The macOS CI job requires a qualifying candidate and the preserved native assertion before resuming the full build. A qualifying candidate is still provisional until reproduced on the owner's Mac and iPhone embedding revision and accepted by the preserved regression gate. The small synthetic corpus is useful for detecting unsafe behavior and cannot establish population-level quality.
+
+Relative ordering alone can coexist with a rejected injection. This defect could explain missing context for paraphrases. It cannot by itself explain an inference failure in a request where memory was explicitly disabled. Run the same eight comparative diagnostics twice on the same signed build. Keep model/structured-output failures, agent errors and memory selection observations separate. Use no personal data in artifacts. SQLite storage and native permissions are outside this change.
+
+
+## Corrective candidate experiment
+
+The matcher now computes one minus cosine similarity from native vectors, rather than assuming the string-distance return scale. The original germination threshold assertion remains unchanged. The candidate evaluator also measures directed query-term coverage with the OS English word embedding. Exact lexical matches have full weight, weak and missing associations contribute zero, and the highest-scoring note must meet an absolute score floor and a separation margin. The sentence score may corroborate the term signal. The experiment is evaluated on the unchanged query splits and does not enable a new relevance policy in the application.
+
+For a quick result after the native benchmark, run:
+
+```bash
+grep -E 'metadata|^candidate|^holdout word-alignment|^word-alignment-unavailable' audit/memory-benchmark.txt
+```
+
+Evidence is admissible only with the word embedding available and the unchanged calibration and holdout gates satisfied. An experimental winner still requires policy implementation parity and independent validation before integration.
+
+
+## Owner Mac validation of answerability
+
+Hosted run [46108460427](https://github.com/tfredx/OpenJarvis/actions/runs/46108460427) showed vector-derived germination distance 0.5675518626625164 and preserved the failing 0.45 assertion. No native word-alignment configuration qualified. One setting that had zero false positives found just two of 12 relevant calibration notes. The sentence matcher ranked the relevant note first for three of 12 answer-bearing calibration queries and five of 12 holdout queries on the earlier artifact.
+
+The opt-in experiment uses Apple Foundation Models locally to select a single note that directly answers a synthetic query, or abstain. The model sees only the question and note texts, without candidate IDs, labels or splits. Two fresh sessions see opposite note order. A note is selected only if both valid verdicts identify the same note. Disagreement abstains. Any failed verdict prevents a candidate decision for the experiment. No runtime retrieval uses this model. No production note is read or exported.
+
+On macOS with Apple Intelligence ready, run `./scripts/benchmark-memory-retrieval.sh --answerability` from `mobile/ios`. It performs 60 model calls and writes `audit/memory-answerability.json` and the metric report. Look for `answerability`, `calibration answerability-consensus`, `holdout answerability-consensus` and `candidate` in the summary. A candidate must satisfy the same 90% precision, 65% recall, 5% false-positive ceiling and zero no-answer injections in both splits. A scorer-only synthetic fixture validated the report plumbing. Native answerability performance is unmeasured.
+
+## Owner result and independent-note experiment
+
+The owner's macOS 27.3 (26C5047e) run at `9966312d` completed all 60 listwise judgments with zero call failures and 18 order disagreements in 30 query groups. Calibration consensus retrieved 6 of 12 relevant notes with zero false positives and zero no-answer injections. Recall was 50%, below the 65% floor. No candidate advanced to holdout.
+
+The next opt-in experiment uses `./scripts/benchmark-memory-retrieval.sh --pointwise`. It makes 120 local model calls, one fresh session per question and note pair. The model sees no competing notes, note IDs, labels or split. The scorer selects a note only when exactly one is approved for the question. Multiple approvals abstain, and any missing verdict makes this candidate ineligible. The unchanged calibration and holdout gates apply. The command writes `audit/memory-pointwise.json` with synthetic IDs and verdicts. This is an offline benchmark only. It does not change production retrieval or the original native regression.
+
+### Grounded replay on saved Mac evidence
+
+On macOS 27.3 (26C5047e), commit `64c1bf2d` verified 25 ambiguous pointwise approvals with zero failed verdicts. Calibration selected nine relevant notes and one irrelevant note, with three missed relevant notes. Precision was 90%, recall was 75%, and pair false-positive rate was 2.08%. The irrelevant note was selected for a no-answer query, so the unchanged gate rejected the policy before holdout.
+
+Replay with the saved synthetic files from the same corpus, from `mobile/ios`:
+
+```sh
+python3 benchmarks/analyze-retrieval.py --distances audit/memory-distances.json --pointwise audit/memory-pointwise.json --grounded audit/memory-grounded.json --answerability audit/memory-answerability.json
+```
+
+`grounded-listwise-corroborated` keeps unique pointwise approvals. For an ambiguous group, exactly one note must have grounded support and at least one of the saved forward and reversed listwise verdicts must endorse that note. Incomplete model evidence makes this policy ineligible. The replay consumes saved verdicts without invoking Apple models. The policy needs to reject the observed no-answer selection and retain at least eight of the nine correct calibration selections to reach holdout. The existing holdout gate, production behavior and historical native regression are unchanged. Owner replay is pending.
+
+### Owner Mac replay at 274e92e8
+
+The query-specificity rule retrieved 9 of 12 relevant calibration notes, with zero false selections. On holdout it retrieved all 12 relevant notes and selected one irrelevant note for a query with no answer. Precision was 12/13 (92.31%), pair false-positive rate was 1/48 (2.08%), and one of three unanswerable holdout queries received a note. This fails the zero no-answer injection gate. The scorer correctly returned `candidate none`. No policy qualified for production.
+
+The next investigation uses the four existing synthetic audit JSON files (distances, pointwise, grounded and answerability) to trace the false selection. Their schemas contain synthetic IDs, numeric measurements, environment metadata and model verdicts. The files are generated on the owner's Mac. Any policy designed using errors from this holdout needs a fresh independent evaluation set. The original native regression and comparative iPhone diagnostics remain open.
+
+### Independent confirmation on the owner Mac at ba4e746f
+
+Calibration retrieved 9/12 positives and the previous holdout retrieved 11/12, both with zero false selections. On the independently measured 25-query set, the frozen policy retrieved 9/16 relevant notes and rejected 84/84 negatives. It abstained on all nine no-answer queries and on seven answerable queries. Observed recall of 56.25% failed the 65% floor, which requires 11 of 16. The candidate is rejected. Inspection of the lexical veto alone excludes one labeled positive (fresh-6-2, Oak Pier). The other six misses require the saved model judgments to distinguish first-stage rejection, verification rejection and multiple verified candidates. Keep this result as historical evidence if these cases inform another policy. No new device build or iPhone inference evidence was generated.
+
+### Independent replication on the owner Mac at 9b30b939
+
+The Mac replay returned 10/12, 11/12 and 11/16 relevant notes on the three previously examined splits. Each recorded zero false selections. The fresh 25-query replication retrieved 14 of 16 relevant notes and incorrectly selected two of 84 irrelevant notes. Both false selections occurred on unanswerable queries (2/9). Precision and recall were each 87.5%. The pair false-positive rate was 2.38%. Precision fell below the 90% floor and the two no-answer injections failed the zero-injection requirement. The Mac runner rejected the candidate.
+
+This is benchmark evidence. The aggregate result does not identify the two notes or whether the tie-break chose them. Replay requires retrieval-replication-pointwise.json and retrieval-replication-verified.json from the same evidence directory. The checked-out corpus supplies the labels. Production integration, the original native regression and physical iPhone acceptance remain pending.

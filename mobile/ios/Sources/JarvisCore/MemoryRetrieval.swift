@@ -16,12 +16,27 @@ public struct OnDeviceMemorySemanticMatcher: MemorySemanticMatcher {
     public func distance(query: String, note: String) -> Double? {
         #if canImport(NaturalLanguage)
         guard let embedding = NLEmbedding.sentenceEmbedding(for: .english) else { return nil }
-        let value = embedding.distance(between: query, and: note, distanceType: .cosine)
-        return value.isFinite ? value : nil
+        return Self.cosineDistance(embedding.vector(for: query), embedding.vector(for: note))
         #else
         return nil
         #endif
     }
+
+    // Calculate the documented metric from vectors. The native string-distance
+    // result matched chord distance on revision 1, but that scale can vary.
+    static func cosineDistance(_ lhs: [Double]?, _ rhs: [Double]?) -> Double? {
+        guard let lhs, let rhs, !lhs.isEmpty, lhs.count == rhs.count else { return nil }
+        var dot = 0.0, lhsSquared = 0.0, rhsSquared = 0.0
+        for (a, b) in zip(lhs, rhs) {
+            dot += a * b
+            lhsSquared += a * a
+            rhsSquared += b * b
+        }
+        let norm = sqrt(lhsSquared) * sqrt(rhsSquared)
+        guard norm.isFinite, norm > 0, dot.isFinite else { return nil }
+        return 1 - min(1, max(-1, dot / norm))
+    }
+
 }
 
 enum MemoryRetrieval {
@@ -36,17 +51,25 @@ enum MemoryRetrieval {
         "those", "through", "what", "when", "where", "which", "while", "with", "would", "your"
     ]
 
+    static func lexicalQueryTerms(_ text: String) -> Set<String> {
+        Set(tokens(text).filter { $0.count > 2 && !stopWords.contains($0) })
+    }
+
+    static func lexicalCoverage(terms: Set<String>, note: String) -> Double {
+        guard !terms.isEmpty else { return 0 }
+        return Double(terms.intersection(tokens(note)).count) / Double(terms.count)
+    }
+
     static func rank(
         query: String,
         notes: [Note],
         semanticDistance: (String, String) -> Double? = { _, _ in nil }
     ) -> [Note] {
-        let queryTerms = Set(tokens(query).filter { $0.count > 2 && !stopWords.contains($0) })
+        let queryTerms = lexicalQueryTerms(query)
         guard !queryTerms.isEmpty else { return [] }
 
         return notes.enumerated().compactMap { index, note -> (note: Note, score: Double, recency: Int)? in
-            let noteTerms = Set(tokens(note.text))
-            let lexical = queryTerms.isEmpty ? 0 : Double(queryTerms.intersection(noteTerms).count) / Double(queryTerms.count)
+            let lexical = lexicalCoverage(terms: queryTerms, note: note.text)
             let distance = semanticDistance(query, note.text)
             let semantic: Double
             if let distance, distance.isFinite, (0...maximumSemanticDistance).contains(distance) {
@@ -63,6 +86,26 @@ enum MemoryRetrieval {
             return $0.recency < $1.recency
         }
         .map(\.note)
+    }
+
+    // Directed coverage rewards a note that addresses several query terms.
+    // Missing vocabulary contributes zero. Exact matches need no embedding.
+    static func wordCoverage(terms: Set<String>, note: String,
+                             distance: (String, String) -> Double?) -> Double? {
+        let query = terms.sorted()
+        let noteTerms = lexicalQueryTerms(note).sorted()
+        guard !query.isEmpty, !noteTerms.isEmpty else { return nil }
+        let coverage = query.reduce(0.0) { total, term in
+            if noteTerms.contains(term) { return total + 1 }
+            let closest = noteTerms.compactMap { distance(term, $0) }.filter {
+                $0.isFinite && (0...2).contains($0)
+            }.min() ?? 2
+            // Only local term associations stronger than 0.35 cosine similarity
+            // contribute. Squaring emphasizes strong term-level agreement.
+            let signal = max(0, 1 - closest / 0.65)
+            return total + signal * signal
+        }
+        return coverage / Double(query.count)
     }
 
     private static func tokens(_ text: String) -> [String] {
