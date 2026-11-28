@@ -1,8 +1,8 @@
-# Current handoff — PR #27 merged; PR #28 refreshed; SQLite production cutover gated
+# Mobile integration handoff
 
-Date: 2026-11-28 ET. `ios/main` is `84944000710a716af3862adedd7e5ba91bd15a7b` after PR #27; `827735587db3dbae082f06099d89239c7348721d` was the merge of PR #26 on top of PR #25's `ede3b2242979fe0545dc93e74f718a2535a9d338`. PR #25 integrated transactional SQLite session CRUD; its complete required/integrated CI conclusion remains unverified using the available status tools. PR #26 integrated the opt-in synthetic physical-inference diagnostics. GitHub reported both PRs merged. Combined commit-status lookup returned no contexts for PR #26's merge commit; the available workflow-run query returned no associated PR runs. Do not represent this as a verified green CI run.
+Verified `ios/main` at `76acd8ddb8ae977d501315fe3efd1b5d45ca0ddb`. PRs #25–#33 are merged. The latest first-parent merge is #32.
 
-PR #27 is merged at `84944000710a716af3862adedd7e5ba91bd15a7b`; its integrated CI is not independently verified here. PR #28 is refreshed against that integration commit; required CI remains mandatory.
+GitHub Actions displays a fork-wide suspension due to usage. The most recent successful integration run shown is [46085721355](https://github.com/tfredx/OpenJarvis/actions/runs/46085721355) at `adab8f8`. No run or status was found for the current HEAD. Shell build fixtures and `git diff --check 6206921f..HEAD` passed. Swift regression, security jobs, Rust, both native builds and hosted simulator tests lack current-HEAD results. This Linux workspace has no Swift, Rust or Xcode toolchain. No current development IPA was produced.
 
 ## Owner-reported Mac and device evidence
 
@@ -14,62 +14,18 @@ Tim reported partial execution on a physical iPhone: four basic factual/creative
 
 PR #20 added a required security audit dependency, validated `ios-vX.Y.Z` tag handling, tag-derived version/build injection, unsigned IPA packaging and checksummed artifacts. PR #20/#21 integrated runs passed; artifact 15233712034 is available from [workflow run 46072060277](https://github.com/tfredx/OpenJarvis/actions/runs/46072060277). PR #22 run 46082211356 and integrated run 46083177104 passed seven jobs, including 62 portable Swift tests, 10 Rust bridge tests/cross-build, 11 hosted native integration tests, security audits, iPhoneOS and simulator compilation, and artifact packaging; integrated artifact 15237619676 was uploaded. PR #23 run 46084387629 and integrated run 46085721355 passed seven jobs and uploaded artifact 15238954029.
 
-PR #24 run 46086033077 executed 66 portable Swift tests, 10 Rust bridge tests, security validation, both unsigned native builds and 11 hosted integration tests and uploaded artifact 15239452414, but the native job ended cancelled during final diagnostics retention. It is not a passing required conclusion. PR #25 replaced it and merged; its integrated CI status is unknown here. For PR #26, the available GitHub commit-status and workflow-run endpoints returned no checks/runs for the merge commit. PRs #27/#28 currently have no workflow-run result exposed for the examined heads. Treat absent evidence as unknown, not passed.
+PR #24 run 46086033077 executed 66 portable Swift tests, 10 Rust bridge tests, security validation, both unsigned native builds and 11 hosted integration tests and uploaded artifact 15239452414, but the native job ended cancelled during final diagnostics retention. It is not a passing required conclusion. PR #25 replaced it and merged; its integrated CI status is unknown here. For PR #26, the available GitHub commit-status and workflow-run endpoints returned no checks/runs for the merge commit. Required CI results for the later integration commits remain unverified. Treat absent evidence as unknown, not passed.
 
 The pipeline artifact is unsigned. Tag-specific versioned release publication has not been exercised. No signed, App Store or production release exists. Successful compilation and simulator tests are not physical-device runtime validation.
 
-## Integrated SQLite session operations — PR #25
+## Integrated changes
 
-PR #25 integrated transactional create, rename, select, snapshot-save, delete and explicit-erase operations in `SQLiteSessionStore`. JSON remains the authoritative app store: SQLite is not wired into `SessionRepository`, `SessionCoordinator` or startup. No migration, data deletion, device file protection, or on-device SQLite behavior is claimed. Do not start production migration/cutover until the integrated foundation's required CI is confirmed and signed-device file protection, migration/recovery, backup exclusion and rollback behavior pass their gates. Never roll back to an old JSON snapshot after SQLite has accepted new writes without a lossless reconciliation path.
+- #25 and #32 added transactional SQLite archive operations and safer rehearsal recovery. JSON remains authoritative. Production activation requires the migration, rollback, signed-device file protection and backup exclusion gates.
+- #26 and #29 added synthetic inference comparison. Report schema 2 compares direct local generation and the agent path, recording elapsed time and content-free failure categories.
+- #27 and #30 added Swift-first upstream contract adaptation and invocation-scoped tool results, preserving explicit approval and default-deny policy. The upstream source pin is `556ddf32456bdf5c40195714a3385b339b5f98f9`.
+- #28 and #31 added capability dispatch and an unregistered scoped Calendar reader. OS access and registration remain pending permission review.
+- #33 added the Activity view for the latest task with approval, cancellation and user-initiated recovery. Native accessibility evidence is pending.
 
-## Integrated inference diagnostics — PR #26
+## Next integration steps
 
-The opt-in runner executes eight fixed synthetic scenarios through the local Agent/Intelligence path and memory matcher. Its report omits prompts, answers, memory text and model error text, uses temporary synthetic session state, and refuses to run while live work is unresolved. The implementation is integrated at `8277355`; CI execution and current physical-device acceptance remain unverified. Owner-run diagnostics must be associated with the exact build, device and OS before those results can be treated as acceptance evidence.
-
-## PR #27 — Swift-first upstream contract adapter
-
-The owner selected Swift-first orchestration while retaining Apple Foundation Models. ADR-0009 accepts the adapter boundary: Swift mirrors pinned upstream `OjAgent`, `AgentContext`, `AgentResult` and `ToolResult` contracts. It does not link Rust `openjarvis-agents`, `rig-core` or `reqwest`. Local tool policy and request denial stay authoritative; memory writes require explicit human approval. Tests cover contract shape, context tampering, denials and approval. They have not run in this Linux environment. PR #27 is merged; its integrated CI remains unverified.
-
-## PR #28 — permission-neutral native capability interface
-
-PR #28 defines fixed capability IDs, trusted adapter registration, bounded typed values, independent exact authorization and fresh human approval per call; defaults deny. It registers no native provider, adds no usage descriptions/entitlements/permissions, and is not wired into the app. It does not implement Calendar, Reminders, Contacts, Photos or Location functionality. PR #28 includes the PR #27 merge commit; require full Swift/Xcode/security/native CI before integration.
-
-## Local validation and next actions
-
-This workspace is Linux without Swift, Cargo or Xcode. Available local checks are `git diff --check` and `mobile/ios/scripts/test-build-scripts.sh`; these do not replace native CI. PR #27 is merged. PR #28 documentation conflicts are reconciled against the PR #27 merge; its required CI must pass before integration. Next independent engineering increment: scripted inference providers and a deterministic bounded orchestration state machine. SQLite migration remains gated as above. Physical install, signing and on-device test execution require the owner; no current performance result is established.
-
-## Scoped Calendar reader increment
-
-Baseline `6206921f` (PR #28 integrated). PRs #29 (diagnostics) and #30 (task result isolation) are independent. This branch adds an unregistered EventKit Calendar reader with a maximum seven-day UTC window, at most ten selected calendars, capped summaries and existing full-access checks before and after fetching. It performs no writes and requests no OS access. The dispatcher checks cancellation and app authorization again after awaiting approval. Tests cover cancellation while approval is outstanding and malformed or excessive date ranges.
-
-Local whitespace and build-script checks passed. Swift, native builds and physical access were not tested here. Next: validate Calendar selection and the approval preview, then obtain permission review before enabling the provider and run the signed-device denial, revocation and scope scenarios.
-
-
-## PR #29 — comparative diagnostics
-
-Runs identical synthetic inputs through direct Apple generation and the production agent entry point. Report schema 2 adds elapsed time and content-free failure codes. Prevents concurrent live tasks during diagnostics and documents a consolidated signed-device batch.
-
-Depends on integrated PRs #26 and #27. No new permissions, dependencies, network access or persistence changes. Scripted tests cover independent failure evidence and report redaction. Local whitespace and build-script checks passed. Swift, native builds and device tests were unavailable locally. Require full CI before merge. Session creation and hardware behavior remain unverified.
-
-Current branch refreshed against PR #31 integration; required CI pending.
-
-
-## PR #33 — task activity
-
-Shows the latest task using real conversation and checkpoint data. Adds expandable outcomes and existing approval, cancellation and recovery operations to the Activity tab. Documents the supported execution path and deferred background options. Independent of #29–#32. Local whitespace and build-script fixtures passed. Swift/Xcode CI, Dynamic Type and VoiceOver validation remain pending. No additional permissions or storage schema changes.
-
-Refreshed after PR #29 integration; required CI pending.
-
-
-## PR #30 — feature increment
-
-A rejected overlapping submission previously cleared the active invocation’s shared tool result list. Collect results inside the invocation and preserve existing checkpoint and approval behavior. Regression suspends the active model call and submits a competing request. Depends on integrated PR #27. Independent of #29. Whitespace and build-script checks passed. Swift, native CI and device execution remain unverified.
-
-Refreshed against `0f0368360fd208178cd436a3e94fe50ee6c2a2fe` after PR #33 integration. Required CI pending.
-
-
-## PR #32 — migration path safety
-
-Distinguishes absent paths from dangling symlinks in the migration scratch directory and rejects invalid journal records during cleanup. Tests verify retention of dangling journal and recorded-stage links. Depends on existing shadow migration only and adds no storage activation. Local whitespace and shell fixtures passed. Swift and native CI pending.
-
-Refreshed against `7be6163feec04c9596653e405cc58b2a875eec7c` after PR #30 integration. Required CI pending.
+A maintainer must restore Actions. Require a successful complete workflow and verify the artifact manifest source SHA and checksums before installation. Use the signed-device batch in [DEVICE_INSTALL.md](docs/DEVICE_INSTALL.md). Continue with deterministic briefing execution, gated EventKit scope and durable action outcomes independently. Feature PRs record evidence in their own validation records. Update this handoff and the roadmap in dedicated integration documentation commits.

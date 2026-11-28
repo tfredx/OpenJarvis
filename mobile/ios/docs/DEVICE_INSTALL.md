@@ -9,10 +9,13 @@ This is an experimental application, not an App Store release. CI builds unsigne
 - Apple account added in Xcode Settings > Accounts; personal team or paid development team as appropriate.
 
 ## Build and install
+
+The SHA below includes PRs #25–#33. GitHub Actions is suspended on the fork, so this SHA currently has no verified CI artifact. Use these commands after complete CI succeeds for this exact SHA, or substitute a later verified SHA that contains schema 2.
 ```sh
 git clone https://github.com/tfredx/OpenJarvis.git
 cd OpenJarvis
-git switch ios/main
+git fetch origin ios/main
+git switch --detach 76acd8ddb8ae977d501315fe3efd1b5d45ca0ddb
 cd mobile/ios
 ./scripts/setup-ios.sh --native
 ```
