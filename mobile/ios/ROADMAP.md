@@ -62,8 +62,15 @@ Shows the latest task using real conversation and checkpoint data. Adds expandab
 Refreshed after PR #29 integration; required CI pending.
 
 
-## PR #32 — feature increment
+## PR #30 — feature increment
+
+A rejected overlapping submission previously cleared the active invocation’s shared tool result list. Collect results inside the invocation and preserve existing checkpoint and approval behavior. Regression suspends the active model call and submits a competing request. Depends on integrated PR #27. Independent of #29. Whitespace and build-script checks passed. Swift, native CI and device execution remain unverified.
+
+Refreshed against `0f0368360fd208178cd436a3e94fe50ee6c2a2fe` after PR #33 integration. Required CI pending.
+
+
+## PR #32 — migration path safety
 
 Distinguishes absent paths from dangling symlinks in the migration scratch directory and rejects invalid journal records during cleanup. Tests verify retention of dangling journal and recorded-stage links. Depends on existing shadow migration only and adds no storage activation. Local whitespace and shell fixtures passed. Swift and native CI pending.
 
-Refreshed against `0f0368360fd208178cd436a3e94fe50ee6c2a2fe` after PR #33 integration. Required CI pending.
+Refreshed against `7be6163feec04c9596653e405cc58b2a875eec7c` after PR #30 integration. Required CI pending.
