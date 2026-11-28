@@ -9,12 +9,23 @@ mode=embedding
 case "${1:-}" in
   --answerability) mode=answerability; shift ;;
   --pointwise) mode=pointwise; shift ;;
+  --grounded) mode=grounded; shift ;;
 esac
-[[ $# -eq 0 ]] || { echo 'Usage: benchmark-memory-retrieval.sh [--lexical-only|--answerability|--pointwise]' >&2; exit 2; }
+[[ $# -eq 0 ]] || { echo 'Usage: benchmark-memory-retrieval.sh [--lexical-only|--answerability|--pointwise|--grounded]' >&2; exit 2; }
 [[ "$(uname -s)" == Darwin ]] || { echo 'Native measurements require macOS. Use --lexical-only for the portable baseline.' >&2; exit 2; }
 mkdir -p audit
 temp="$(mktemp -d)"
 trap 'rm -rf "$temp"' EXIT
+if [[ "$mode" == grounded ]]; then
+  for input in audit/memory-distances.json audit/memory-pointwise.json; do
+    [[ -s "$input" ]] || { echo "Missing saved benchmark input: $input" >&2; exit 2; }
+  done
+  xcrun swiftc -parse-as-library -swift-version 6 benchmarks/MeasureAnswerability.swift -o "$temp/answerability"
+  "$temp/answerability" benchmarks/semantic-retrieval.json audit/memory-grounded.json --grounded audit/memory-pointwise.json
+  git rev-parse HEAD > audit/memory-grounded-source.txt
+  python3 benchmarks/analyze-retrieval.py --distances audit/memory-distances.json --pointwise audit/memory-pointwise.json --grounded audit/memory-grounded.json | tee audit/memory-grounded-benchmark.txt
+  exit
+fi
 git rev-parse HEAD > audit/memory-benchmark-source.txt
 xcodebuild -version >> audit/memory-benchmark-source.txt
 uname -m >> audit/memory-benchmark-source.txt

@@ -120,7 +120,10 @@ def main():
     mode.add_argument("--lexical-only", action="store_true")
     parser.add_argument("--answerability", type=Path)
     parser.add_argument("--pointwise", type=Path)
+    parser.add_argument("--grounded", type=Path)
     args = parser.parse_args()
+    if args.grounded and not args.pointwise:
+        parser.error("--grounded requires --pointwise")
     if (args.answerability or args.pointwise) and args.lexical_only:
         parser.error("Model experiments require --distances")
 
@@ -255,6 +258,31 @@ def main():
                     )
         else:
             print("pointwise-ineligible: incomplete model evidence")
+
+    if args.grounded:
+        evidence = json.loads(args.grounded.read_text())
+        grounded = {row["id"]: row.get("answers") for row in evidence}
+        expected = {ident for group in groups
+                    if len(approved := approvals(group["candidates"])) > 1
+                    for ident in approved}
+        if set(grounded) != expected or len(grounded) != len(evidence):
+            raise SystemExit("Grounded measurements do not match ambiguous approvals.")
+        if any(value is not None and type(value) is not bool for value in grounded.values()):
+            raise SystemExit("Invalid grounded verdict.")
+
+        def select_grounded(rs):
+            approved = approvals(rs)
+            if len(approved) <= 1:
+                return set(approved)
+            supported = [ident for ident in approved if grounded[ident] is True]
+            return set(supported) if len(supported) == 1 else set()
+
+        failed = sum(value is None for value in grounded.values())
+        print("grounded", json.dumps({"checked_approvals": len(grounded), "failed_verdicts": failed}))
+        if failures == 0 and failed == 0:
+            policies["grounded-single-answer"] = select_grounded
+        else:
+            print("grounded-ineligible: incomplete model evidence")
 
     results = {name: metrics(calibration, policy) for name, policy in policies.items()}
     for name, result in results.items():
