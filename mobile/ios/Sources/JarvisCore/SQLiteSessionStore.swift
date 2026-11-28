@@ -21,6 +21,7 @@ public struct SQLiteSessionArchive: Equatable, Sendable {
 
 public enum SQLiteStoreError: Error, Equatable {
     case database(Int32), unsupportedVersion(Int32), invalidArchive, invalidSchema, alreadyImported, missingArchive
+    case unknownSession, unresolvedTask, invalidTitle, lastSession
 }
 
 private final class SQLiteConnection {
@@ -102,6 +103,136 @@ private final class SQLiteConnection {
         try transaction { try readArchive() }
     }
 
+    /// Transactional session CRUD for the SQLite backend. This API remains isolated
+    /// from the production JSON repository until migration and device gates pass.
+    @discardableResult public func createSession(title: String, createdAt: Date = Date(), snapshot: Snapshot = Snapshot()) throws -> UUID {
+        try validateTitle(title)
+        guard createdAt.timeIntervalSinceReferenceDate.isFinite else { throw SQLiteStoreError.invalidArchive }
+        let id = UUID(); let bytes = try JSONEncoder().encode(snapshot)
+        try transaction {
+            let count = try scalar("SELECT count(*) FROM sessions")
+            if count > 0 {
+                let archive = try readArchive()
+                guard let active = archive.sessions.first(where: { $0.id == archive.activeID }) else { throw SQLiteStoreError.invalidSchema }
+                try requireResolved(active.snapshot)
+            }
+            try statement("INSERT INTO sessions(id,title,created,position,snapshot) VALUES(?,?,?,?,?)") { s in
+                try bind(id.uuidString, to: s, at: 1); try bind(title, to: s, at: 2)
+                try check(sqlite3_bind_double(s, 3, createdAt.timeIntervalSinceReferenceDate))
+                try check(sqlite3_bind_int64(s, 4, Int64(count)))
+                try bind(bytes, to: s, at: 5); try done(s)
+            }
+            if count == 0 {
+                try statement("INSERT INTO selection(singleton,active_id) VALUES(1,?)") { s in
+                    try bind(id.uuidString, to: s, at: 1); try done(s)
+                }
+            } else {
+                try statement("UPDATE selection SET active_id=? WHERE singleton=1") { s in
+                    try bind(id.uuidString, to: s, at: 1); try done(s)
+                }
+            }
+            _ = try readArchive()
+        }
+        return id
+    }
+
+    public func renameSession(_ id: UUID, title: String) throws {
+        try validateTitle(title)
+        try transaction {
+            try statement("UPDATE sessions SET title=? WHERE id=?") { s in
+                try bind(title, to: s, at: 1); try bind(id.uuidString, to: s, at: 2); try done(s)
+            }
+            guard try scalar("SELECT changes()") == 1 else { throw SQLiteStoreError.unknownSession }
+            _ = try readArchive()
+        }
+    }
+
+    public func selectSession(_ id: UUID) throws {
+        try transaction {
+            let archive = try readArchive()
+            guard archive.sessions.contains(where: { $0.id == id }) else { throw SQLiteStoreError.unknownSession }
+            if archive.activeID != id,
+               let active = archive.sessions.first(where: { $0.id == archive.activeID }) {
+                try requireResolved(active.snapshot)
+            }
+            try statement("UPDATE selection SET active_id=? WHERE singleton=1") { s in
+                try bind(id.uuidString, to: s, at: 1); try done(s)
+            }
+            _ = try readArchive()
+        }
+    }
+
+    public func saveSnapshot(_ snapshot: Snapshot, for id: UUID) throws {
+        let bytes = try JSONEncoder().encode(snapshot)
+        try transaction {
+            let archive = try readArchive()
+            guard archive.sessions.contains(where: { $0.id == id }) else { throw SQLiteStoreError.unknownSession }
+            try statement("UPDATE sessions SET snapshot=? WHERE id=?") { s in
+                try bind(bytes, to: s, at: 1); try bind(id.uuidString, to: s, at: 2); try done(s)
+            }
+            guard try scalar("SELECT changes()") == 1 else { throw SQLiteStoreError.unknownSession }
+            _ = try readArchive()
+        }
+    }
+
+    public func deleteSession(_ id: UUID) throws {
+        try transaction {
+            let archive = try readArchive()
+            guard archive.sessions.count > 1 else { throw SQLiteStoreError.lastSession }
+            guard let target = archive.sessions.first(where: { $0.id == id }) else { throw SQLiteStoreError.unknownSession }
+            try requireResolved(target.snapshot)
+            if archive.activeID != id,
+               let active = archive.sessions.first(where: { $0.id == archive.activeID }) {
+                try requireResolved(active.snapshot)
+            }
+            let position = archive.sessions.firstIndex(where: { $0.id == id })!
+            if archive.activeID == id, let replacement = archive.sessions.first(where: { $0.id != id }) {
+                try statement("UPDATE selection SET active_id=? WHERE singleton=1") { s in
+                    try bind(replacement.id.uuidString, to: s, at: 1); try done(s)
+                }
+            }
+            try statement("DELETE FROM sessions WHERE id=?") { s in try bind(id.uuidString, to: s, at: 1); try done(s) }
+            guard try scalar("SELECT changes()") == 1 else { throw SQLiteStoreError.unknownSession }
+            // Move rows through a unique negative range so gap removal does not
+            // collide with the UNIQUE position constraint while deleting the middle.
+            try exec("UPDATE sessions SET position=-position-1")
+            try exec("UPDATE sessions SET position=-position-1 WHERE position < -\(position + 1)")
+            try exec("UPDATE sessions SET position=-position-1 WHERE position < 0")
+            try exec("UPDATE sessions SET position=position-1 WHERE position > \(position)")
+            _ = try readArchive()
+        }
+    }
+
+    /// Destructive reset for a future explicit user flow; never invoked by migration.
+    public func eraseAllAndCreateFreshSession() throws -> UUID {
+        let id = UUID(); let snapshot = try JSONEncoder().encode(Snapshot())
+        try transaction {
+            let archive = try readArchive()
+            for session in archive.sessions { try requireResolved(session.snapshot) }
+            try exec("DELETE FROM selection; DELETE FROM sessions")
+            try statement("INSERT INTO sessions(id,title,created,position,snapshot) VALUES(?,?,?,?,?)") { s in
+                try bind(id.uuidString, to: s, at: 1); try bind("New conversation", to: s, at: 2)
+                try check(sqlite3_bind_double(s, 3, Date().timeIntervalSinceReferenceDate))
+                try check(sqlite3_bind_int64(s, 4, 0)); try bind(snapshot, to: s, at: 5); try done(s)
+            }
+            try statement("INSERT INTO selection(singleton,active_id) VALUES(1,?)") { s in
+                try bind(id.uuidString, to: s, at: 1); try done(s)
+            }
+            _ = try readArchive()
+        }
+        return id
+    }
+
+    private func validateTitle(_ title: String) throws {
+        guard (1...80).contains(title.count), title == title.trimmingCharacters(in: .whitespacesAndNewlines),
+              !title.contains("\u{0000}") else { throw SQLiteStoreError.invalidTitle }
+    }
+
+    private func requireResolved(_ bytes: Data) throws {
+        let snapshot = try JSONDecoder().decode(Snapshot.self, from: bytes)
+        guard snapshot.status != .running, snapshot.status != .approval else { throw SQLiteStoreError.unresolvedTask }
+    }
+
     private func validate(_ archive: SQLiteSessionArchive) throws {
         let ids = Set(archive.sessions.map(\.id))
         guard !ids.isEmpty, ids.count == archive.sessions.count, ids.contains(archive.activeID) else { throw SQLiteStoreError.invalidArchive }
@@ -145,6 +276,12 @@ private final class SQLiteConnection {
     }
     private func bind(_ value: String, to s: OpaquePointer, at index: Int32) throws {
         try value.withCString { try check(sqlite3_bind_text(s, index, $0, -1, Self.transient)) }
+    }
+    private func bind(_ value: Data, to s: OpaquePointer, at index: Int32) throws {
+        guard !value.isEmpty, value.count <= Int(Int32.max) else { throw SQLiteStoreError.invalidArchive }
+        try value.withUnsafeBytes { bytes in
+            try check(sqlite3_bind_blob(s, index, bytes.baseAddress, Int32(bytes.count), Self.transient))
+        }
     }
     private func check(_ rc: Int32) throws { guard rc == SQLITE_OK else { throw SQLiteStoreError.database(rc) } }
     private func done(_ s: OpaquePointer) throws {
