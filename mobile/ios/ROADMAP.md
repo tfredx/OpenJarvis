@@ -9,7 +9,7 @@
 | v0.4.1 | Shadow migration preserves source bytes; recovery journal fails closed | Implemented and previously CI-validated; production cutover remains disabled pending full migration and signed-device protection gates |
 | CI/CD | Required regression/security/device+simulator compile validation and versioned downloadable unsigned release artifacts | Pipeline integrated and validated on prior PRs; release-tag path not exercised |
 | v0.5.0 | Swift-first upstream contracts with local inference, bounded execution and explicit approvals | Adapter merged in PR #27; integrated CI unverified; concrete upstream Rust agent is not linked |
-| v0.6.0 | Scoped native device providers with platform permission and approval tests | Permission-neutral dispatcher/API implemented in PR #28; no provider or OS permission is active; refreshed against PR #27 merge; CI pending |
+| v0.6.0 | Scoped native device providers with platform permission and approval tests | PR #28 capability dispatcher integrated at `6206921f`. Scoped Calendar reader implemented on `feat/ios-scoped-calendar-reader`; unregistered with no OS permission request. CI and device tests pending. |
 | v0.7.0 | Checkpointed background workflows with measured device limits | Not started |
 | v0.8.0 | Additional local models and compute routing based on benchmark evidence | Not started; Foundation Models remains default |
 | v0.9.0 | Inspectable personalization and separately reviewed optional Mac companion | Not started |
@@ -44,5 +44,12 @@ ADR-0009 accepts a Swift adapter using pinned upstream agent contract shapes whi
 5. Continue checkpointed workflows, routing and personalization only with deterministic regression evidence and honest platform limits.
 
 Never equate compilation or simulator execution with physical-device testing. Preserve historical failures and actual test counts; do not fabricate performance measurements.
+
+
+## PR #30 — refreshed feature branch
+
+A rejected overlapping submission previously cleared the active invocation’s shared tool result list. Collect results inside the invocation and preserve existing checkpoint and approval behavior. Regression suspends the active model call and submits a competing request. Depends on integrated PR #27. Independent of #29. Whitespace and build-script checks passed. Swift, native CI and device execution remain unverified.
+
+Branch documentation additions (historical branch context; current base includes PR #31; CI remains unverified):
 
 Task result isolation is implemented on `fix/ios-task-result-isolation`. The scripted overlap regression requires Swift CI. Durable action records and restart recovery remain future work.

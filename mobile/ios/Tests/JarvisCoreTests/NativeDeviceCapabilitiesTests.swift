@@ -32,6 +32,13 @@ private actor RecordingCapabilityApproval: NativeDeviceCapabilityApproval {
     func recordedRequests() -> [NativeDeviceCapabilityRequest] { requests }
 }
 
+private struct CancellingApproval: NativeDeviceCapabilityApproval {
+    func approve(_ request: NativeDeviceCapabilityRequest) async -> Bool {
+        withUnsafeCurrentTask { $0?.cancel() }
+        return true
+    }
+}
+
 @MainActor final class NativeDeviceCapabilitiesTests: XCTestCase {
     func testDeviceActionsAreDefaultDeniedEvenWhenAdapterIsRegistered() async throws {
         let capability = RecordingNativeCapability(.calendarRead)
@@ -121,5 +128,41 @@ private actor RecordingCapabilityApproval: NativeDeviceCapabilityApproval {
             _ = try await dispatcher.invoke(capabilityID: NativeDeviceCapabilityID.calendarRead.rawValue, input: "")
             XCTFail("Oversized native output must be rejected")
         } catch { XCTAssertEqual(error as? NativeDeviceCapabilityError, .invalidResult) }
+    }
+
+    func testCancellationDuringApprovalPreventsNativeExecution() async throws {
+        let calendar = RecordingNativeCapability(.calendarRead)
+        let dispatcher = try NativeDeviceCapabilityDispatcher(
+            capabilities: [calendar], authorization: GrantCalendarRead(), approval: CancellingApproval()
+        )
+        let invocation = Task {
+            try await dispatcher.invoke(capabilityID: NativeDeviceCapabilityID.calendarRead.rawValue, input: "synthetic")
+        }
+        do {
+            _ = try await invocation.value
+            XCTFail("Cancellation must prevent execution after approval")
+        } catch {
+            XCTAssertTrue(error is CancellationError)
+        }
+        let requests = await calendar.recordedRequests()
+        XCTAssertTrue(requests.isEmpty)
+    }
+
+    func testCalendarWindowAcceptsOnlyBoundedUTCIntervals() throws {
+        let valid = #"{"start":"2026-11-27T00:00:00Z","end":"2026-12-04T00:00:00Z"}"#
+        let window = try CalendarReadWindow(input: valid)
+        XCTAssertEqual(window.end.timeIntervalSince(window.start), 604800)
+        for invalid in [
+            valid.replacingOccurrences(of: "12-04", with: "12-05"),
+            valid.replacingOccurrences(of: "12-04", with: "11-27"),
+            valid.replacingOccurrences(of: "12-04", with: "11-26"),
+            valid.replacingOccurrences(of: "Z", with: "-05:00"),
+            valid.dropLast() + #", "calendar":"untrusted"}"#,
+            "{}"
+        ] {
+            XCTAssertThrowsError(try CalendarReadWindow(input: invalid)) {
+                XCTAssertEqual($0 as? NativeDeviceCapabilityError, .invalidInput)
+            }
+        }
     }
 }
