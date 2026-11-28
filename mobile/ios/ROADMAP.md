@@ -55,8 +55,15 @@ Depends on integrated PRs #26 and #27. No new permissions, dependencies, network
 Current branch refreshed against PR #31 integration; required CI pending.
 
 
+## PR #33 — task activity
+
+Shows the latest task using real conversation and checkpoint data. Adds expandable outcomes and existing approval, cancellation and recovery operations to the Activity tab. Documents the supported execution path and deferred background options. Independent of #29–#32. Local whitespace and build-script fixtures passed. Swift/Xcode CI, Dynamic Type and VoiceOver validation remain pending. No additional permissions or storage schema changes.
+
+Refreshed after PR #29 integration; required CI pending.
+
+
 ## PR #30 — feature increment
 
 A rejected overlapping submission previously cleared the active invocation’s shared tool result list. Collect results inside the invocation and preserve existing checkpoint and approval behavior. Regression suspends the active model call and submits a competing request. Depends on integrated PR #27. Independent of #29. Whitespace and build-script checks passed. Swift, native CI and device execution remain unverified.
 
-Refreshed against `c2ffc34f6e50487e79a234975ab2f6991b443b4b` after PR #29 integration. Required CI pending.
+Refreshed against `0f0368360fd208178cd436a3e94fe50ee6c2a2fe` after PR #33 integration. Required CI pending.
