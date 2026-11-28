@@ -4,6 +4,7 @@ import Foundation
 /// construct a new capability by supplying a resource string.
 public enum NativeDeviceCapabilityID: String, Codable, CaseIterable, Sendable, Equatable {
     case calendarRead = "device.calendar.read"
+    case reminderRead = "device.reminder.read"
     case reminderCreate = "device.reminder.create"
     case contactsRead = "device.contacts.read"
     case photosRead = "device.photos.read"
@@ -67,6 +68,11 @@ public struct NativeDeviceCapabilityDispatcher: Sendable {
     }
 
     public func invoke(capabilityID rawID: String, input: String) async throws -> NativeDeviceCapabilityResult {
+        try await invoke(capabilityID: rawID, input: input, beforeExecute: {})
+    }
+
+    func invoke(capabilityID rawID: String, input: String,
+                beforeExecute: @Sendable () throws -> Void) async throws -> NativeDeviceCapabilityResult {
         try Task.checkCancellation()
         guard let capabilityID = NativeDeviceCapabilityID(rawValue: rawID) else {
             throw NativeDeviceCapabilityError.unsupported
@@ -88,6 +94,7 @@ public struct NativeDeviceCapabilityDispatcher: Sendable {
         guard authorization.permits(capabilityID.rawValue) else {
             throw NativeDeviceCapabilityError.denied
         }
+        try beforeExecute()
         let result = try await capability.execute(request)
         guard result.content.count <= 16000 else { throw NativeDeviceCapabilityError.invalidResult }
         return result
