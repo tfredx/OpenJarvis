@@ -37,3 +37,7 @@ PR #28 defines fixed capability IDs, trusted adapter registration, bounded typed
 ## Local validation and next actions
 
 This workspace is Linux without Swift, Cargo or Xcode. Available local checks are `git diff --check` and `mobile/ios/scripts/test-build-scripts.sh`; these do not replace native CI. PR #27 is merged. PR #28 documentation conflicts are reconciled against the PR #27 merge; its required CI must pass before integration. Next independent engineering increment: scripted inference providers and a deterministic bounded orchestration state machine. SQLite migration remains gated as above. Physical install, signing and on-device test execution require the owner; no current performance result is established.
+
+## Task Activity increment
+
+Baseline `6206921f` (PR #28 integrated). PRs #29–#32 are independent. The Activity tab shows the latest persisted request, expandable tool outcomes and notices, reply, pending memory approval, and available cancellation and recovery controls. Foreground status reflects actual work; timeline rows reflect the latest published snapshot. No new persisted task log is introduced. Local whitespace and build-script checks passed. Native CI and device accessibility review remain open. See `docs/decisions/background-execution-research.md` for API feasibility. Next: drive the timeline from durable action records once checkpoint states are available.

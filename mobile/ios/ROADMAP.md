@@ -44,3 +44,5 @@ ADR-0009 accepts a Swift adapter using pinned upstream agent contract shapes whi
 5. Continue checkpointed workflows, routing and personalization only with deterministic regression evidence and honest platform limits.
 
 Never equate compilation or simulator execution with physical-device testing. Preserve historical failures and actual test counts; do not fabricate performance measurements.
+
+The Activity tab on `feat/ios-task-activity` displays and controls the latest task using existing snapshots. CI and device accessibility checks are pending. Persistent task history and background resumption are planned separately.
