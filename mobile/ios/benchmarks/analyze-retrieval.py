@@ -43,6 +43,23 @@ def select_confident(rows, threshold, margin, lexical_weight):
     return ranked(rows, score, minimum=threshold, cap=1, margin=margin)
 
 
+def pointwise_policy(evidence, ids):
+    judgments = {row["id"]: row.get("answers") for row in evidence}
+    if set(judgments) != ids or len(judgments) != len(evidence):
+        raise SystemExit("Pointwise measurements do not match candidate pairs.")
+    if any(value is not None and type(value) is not bool for value in judgments.values()):
+        raise SystemExit("Invalid pointwise verdict.")
+
+    def evidence_for(rows):
+        return [row["id"] for row in rows if judgments[row["id"]] is True]
+
+    def select(rows):
+        approved = evidence_for(rows)
+        return set(approved) if len(approved) == 1 else set()
+
+    return judgments, evidence_for, select
+
+
 def divide(num, den):
     return num / den if den else None
 
@@ -80,9 +97,10 @@ def main():
     mode.add_argument("--distances", type=Path)
     mode.add_argument("--lexical-only", action="store_true")
     parser.add_argument("--answerability", type=Path)
+    parser.add_argument("--pointwise", type=Path)
     args = parser.parse_args()
-    if args.answerability and args.lexical_only:
-        parser.error("--answerability requires --distances")
+    if (args.answerability or args.pointwise) and args.lexical_only:
+        parser.error("Model experiments require --distances")
 
     groups = json.loads((HERE / "semantic-retrieval.json").read_text())
     candidates = [row for group in groups for row in group["candidates"]]
@@ -196,6 +214,18 @@ def main():
             policies["answerability-consensus"] = lambda rs: {r["id"] for r in rs if r["id"] in selected}
         else:
             print("answerability-ineligible: incomplete model evidence")
+
+    if args.pointwise:
+        evidence = json.loads(args.pointwise.read_text())
+        judgments, approvals, select = pointwise_policy(evidence, ids)
+        failures = sum(value is None for value in judgments.values())
+        ambiguous = sum(len(approvals(g["candidates"])) > 1 for g in calibration)
+        print("pointwise", json.dumps({"failed_verdicts": failures,
+                                       "calibration_multiple_approvals": ambiguous}))
+        if failures == 0:
+            policies["pointwise-single-answer"] = select
+        else:
+            print("pointwise-ineligible: incomplete model evidence")
 
     results = {name: metrics(calibration, policy) for name, policy in policies.items()}
     for name, result in results.items():
