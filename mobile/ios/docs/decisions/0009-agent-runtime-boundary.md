@@ -1,6 +1,6 @@
 # ADR 0009 — Mobile agent runtime boundary
 
-Status: decision pending; do not change the agent runtime until the boundary is selected.
+Status: accepted for the iOS runtime; direct `rig-core` agent integration is deferred.
 
 ## Context
 
@@ -8,11 +8,11 @@ The mobile app currently runs its agent loop in `mobile/ios/Sources/JarvisCore/C
 
 At upstream pin `556ddf32456bdf5c40195714a3385b339b5f98f9`, `openjarvis-agents::OjAgent` in `rust/crates/openjarvis-agents/src/traits.rs` accepts `AgentContext` and returns `AgentResult`, but its implementations use `rig_core::CompletionModel`. `SimpleAgent` is single-turn and tool-free. `OrchestratorAgent` currently performs one `.chat()` call and leaves tool dispatch for future work. `NativeReActAgent` uses `ToolExecutor` directly. The Rust workspace pins `rig-core = 0.31`; its dependency graph includes `reqwest`. A direct port would therefore add substantial runtime dependency surface without providing the upstream tool orchestration its name implies, and using `NativeReActAgent` as-is would bypass the mobile approval gate.
 
-## Options to resolve
+## Decision
 
-1. Keep Apple inference and the approval-aware orchestration in Swift. Add a narrow adapter using upstream core context/result and capability contracts where they fit, and defer direct `openjarvis-agents` integration until upstream exposes a provider-neutral, approval-aware agent API. This preserves current on-device inference and avoids adding `rig-core`/`reqwest` to the iOS binary, but does not satisfy v0.5 until an actual upstream agent API is used.
-2. Add an asynchronous Rust-to-Swift model bridge and integrate an upstream `OjAgent` implementation behind a restricted, approval-aware executor. This uses the original agent API, but requires lifecycle/cancellation-safe cross-language callbacks and adds the `rig-core` dependency graph. It needs dedicated concurrency, timeout, cancellation and signed-device tests before release.
-3. Replace Apple Foundation Models with a Rust-native provider/model route. This would alter the existing local inference architecture and requires a separate device resource, model availability and distribution assessment.
+Keep inference and orchestration in Swift. Implement the pinned upstream `OjAgent` invocation shape and the `openjarvis-core` `AgentContext`, `AgentResult`, `ToolResult`, `Conversation` and `Message` JSON contracts in a narrow adapter. Continue using Apple Foundation Models for inference and the app's existing Swift authorization/approval path. Context is accepted only when it matches trusted local session state and locally derived grants; the model cannot add tools or permissions. Memory writes remain pending until an explicit user decision, and the result boundary reports pending approval without treating it as success.
+
+Do not add `openjarvis-agents`, `rig-core` or `reqwest` to the iOS binary. The current upstream Rust `OrchestratorAgent` is not provider-neutral and its tool executor is not approval-aware. Reconsider direct Rust trait integration only after upstream provides a provider-neutral, approval-preserving executor contract and the app has lifecycle-safe async bridging tests. This adapter uses upstream contracts; it does not claim the pinned Rust agent implementation itself is linked into the runtime.
 
 ## Constraints for any choice
 
@@ -22,4 +22,4 @@ At upstream pin `556ddf32456bdf5c40195714a3385b339b5f98f9`, `openjarvis-agents::
 - No claim of on-device behavior or performance before signed physical-device validation.
 - Keep the pinned upstream commit and dependency provenance auditable. Do not change upstream `main`.
 
-No option has been selected in this record. v0.5 remains open until an implementation uses and tests the chosen upstream agent boundary without weakening these constraints.
+The implementation and contract-parity tests are in `feat/ios-swift-agent-contracts`; the change remains unvalidated until complete CI passes. v0.5 is not complete until the branch is integrated, and direct Rust `openjarvis-agents` runtime use remains deferred.

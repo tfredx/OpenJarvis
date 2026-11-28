@@ -77,6 +77,8 @@ private struct FixedMemoryDistance: MemorySemanticMatcher {
 
         let prompts = await engine.recordedPrompts()
         XCTAssertEqual(prompts.count, 2)
+        XCTAssertTrue(prompts[0].contains("\"memory_results\""))
+        XCTAssertTrue(prompts[0].contains("\"tools\":[\"reply\"]"))
         XCTAssertTrue(prompts[0].contains("Only action allowed for this task: reply"))
         XCTAssertFalse(prompts[0].contains("Sensitive synthetic seed memory marker"))
         XCTAssertFalse(prompts[0].contains("Old conversation memory marker"))
