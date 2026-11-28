@@ -3,34 +3,44 @@
 | Milestone | Exit condition | Status |
 | --- | --- | --- |
 | v0.2.1 | Governance merged; baseline imported; CI configured and observable | Complete |
-| v0.3.0 | Native Rust bridge compiles/links; security and sessions scoped after validation | CI integrated; memory retrieval and request policy implemented; diagnostics harness in PR #26, CI and device validation pending |
-| v0.3.1 | Isolated session storage, task-safe native UI, migration and device tests | Partial: isolated sessions and hosted tests pass; on-device persistence and migration remain unverified |
-| v0.4.0 | Versioned SQLite migration and retrieval tests | PR #25 transactional operations integrated at `ede3b22`; integrated CI result unknown in this session; JSON remains authoritative and production cutover is not wired |
-| v0.4.1 | Shadow migration rehearsal preserves source bytes; interruption recovery is journaled and fails closed | Complete in CI; JSON remains authoritative, no live cutover |
-| CI/CD | Versioned unsigned IPA artifacts and validation-gated CI | Complete and integrated in PR #20; release-tag path not yet exercised |
-| v0.5.0 | Swift-first orchestration follows pinned upstream OjAgent/AgentContext/AgentResult contracts with local inference and approvals | Implemented in PR #27; CI pending; Rust `openjarvis-agents` implementation not linked |
-| v0.6.0 | Native device tools, scoped permissions and approvals | Permission-neutral dispatcher/API and security tests in PR #28; no provider or iOS permission is active; Swift CI pending |
-| v0.7.0 | Checkpointed background workflows, measured device limits | Not started |
-| v0.8.0 | Additional local models and compute routing | Not started |
-| v0.9.0 | Learning and optional Mac companion | Not started |
-| v1.0.0 | Release criteria met on physical devices | Not started; physical-device acceptance is partial and includes unresolved memory/context failures |
+| v0.3.0 | Native Rust bridge compiles/links; security and sessions scoped after validation | Integrated; memory retrieval/request policy implemented; PR #26 diagnostics code integrated, validation evidence not yet verified |
+| v0.3.1 | Isolated session storage, task-safe native UI, migration and device tests | Partial: isolated sessions and hosted tests passed historically; on-device persistence remains unverified |
+| v0.4.0 | Versioned SQLite migration and retrieval tests | Partial: PR #25 transactional SQLite operations integrated; JSON remains authoritative; PR #25 integrated CI status is unknown here; production cutover is not wired |
+| v0.4.1 | Shadow migration preserves source bytes; recovery journal fails closed | Implemented and previously CI-validated; production cutover remains disabled pending full migration and signed-device protection gates |
+| CI/CD | Required regression/security/device+simulator compile validation and versioned downloadable unsigned release artifacts | Pipeline integrated and validated on prior PRs; release-tag path not exercised |
+| v0.5.0 | Swift-first upstream contracts with local inference, bounded execution and explicit approvals | Adapter implemented in PR #27; branch refresh and required CI pending; concrete upstream Rust agent is not linked |
+| v0.6.0 | Scoped native device providers with platform permission and approval tests | Permission-neutral dispatcher/API implemented in PR #28; no provider or OS permission is active; branch refresh and CI pending |
+| v0.7.0 | Checkpointed background workflows with measured device limits | Not started |
+| v0.8.0 | Additional local models and compute routing based on benchmark evidence | Not started; Foundation Models remains default |
+| v0.9.0 | Inspectable personalization and separately reviewed optional Mac companion | Not started |
+| v1.0.0 | Release matrix passes, including critical physical-device workflows | Not started; physical-device execution is partial, with unresolved memory/context failures |
 
-## Validation and release packaging
+## Validation evidence
 
-Owner-reported local Mac evidence (2026-11-27): Xcode 27.2, XcodeGen and Rust configured; 55 Swift core tests passed; simulator and physical-device compilation and unsigned IPA packaging succeeded. The tested commit/logs were not supplied, so this is not attributed to a specific integration SHA.
+Owner-reported Mac work (2026-11-27): Xcode 27.2, XcodeGen and Rust configured; 55 Swift core tests passed; simulator and physical-device compilation and unsigned IPA packaging succeeded. The commit/logs were not supplied, so this does not map to a validated repository SHA.
 
-Owner-reported physical-device diagnostic execution (2026-11-27): four basic generation prompts passed; “Explain how a seed grows. Do not use tools or memory.” failed; six targeted semantic-memory prompts failed. Exact device/OS, commit and logs/timings were not supplied. See `docs/validation/physical-memory-diagnostics.md`. This is partial physical-device evidence and does not establish performance or complete v1.0 acceptance.
+Owner-reported physical iPhone execution: four basic prompts passed; a process explanation with explicit tool/memory denial failed; six semantic retrieval prompts failed. Device/OS/build identifiers and logs were not supplied. PR #26's eight-scenario diagnostic runner is integrated at `8277355`; current-build physical retest remains pending. No performance or reliable-inference claim is established.
 
-PR #20 added the existing repository security audit as a required CI dependency and validated both arm64 iPhoneOS and simulator compilation, hosted iOS simulator integration tests, IPA packaging and development-artifact upload. PR run 46070616432 and integrated `ios/main` run 46072060277 passed. PR #21 run 46073658513 and integrated run 46074641626 passed all seven jobs. Integrated workflow run 46072060277 uploaded development artifact 15233712034. Its checksummed IPA is unsigned and reports `physical_device_tested: false`; it predates the later owner-reported device execution.
+Historical CI evidence is retained: PR #20/#21 integrated CI passed; PR #22 PR/integrated runs passed all seven jobs, including 62 Swift, 10 Rust bridge, 11 hosted integration tests, security checks, arm64 iPhoneOS and simulator builds, packaging and artifact upload (15237619676). PR #23 PR/integrated runs passed all seven jobs and uploaded artifact 15238954029. PR #24 ran 66 Swift tests, 10 Rust, 11 hosted integration tests and native/security checks and uploaded artifact 15239452414, but its final native job was cancelled during diagnostics retention; it is not a successful required conclusion. PR #25 merged the SQLite session operations; its integrated CI result is unknown based on the status tools available here. PR #26 is merged, but the examined workflow/status endpoints exposed no checks for merge commit `8277355`; do not report green CI without direct run evidence.
 
-PR #22 initial CI identified and corrected a weak lexical match and a context-window issue; an intermediate CI run also caught a truncated test source transfer, which was restored. PR run 46082211356 passed all seven jobs. Integrated run 46083177104 also passed all seven: 62 portable Swift tests, 10 Rust bridge tests/cross-build, 11 hosted native integration tests, five security audits, unsigned arm64 device/simulator builds and artifact packaging. Integrated development artifact 15237619676 is unsigned and does not attest to physical-device execution.
+The versioned IPA workflow produces unsigned artifacts. The release-tag path and 90-day retention have not been exercised. Unsigned IPA packaging and device-target compilation do not establish signed installation or physical-device behavior.
 
-PR #24's native run 46086033077 ended cancelled at diagnostics-artifact retention. PR #25 merged SQLite session operations at `ede3b22`; integrated CI evidence is not available from the connected status tools in this session. JSON remains authoritative and migration is gated on confirmed required CI and signed-device data-protection evidence.
+## Integration and dependency rules
 
-PR #26 adds synthetic inference diagnostics; physical execution and CI are not asserted. PR #27 adds the Swift-first upstream contract adapter, preserving Apple Foundation Models and explicit approval. Its tests are authored but not run locally. The v0.6 capability interface defines fixed IDs, default-deny authorization and per-action human approval without activating any OS permissions. Actual iPhone integrations require later scoped permission decisions and device validation.
+PR #26 diagnostics is integrated. PR #27 and PR #28 are open and now include `8277355` through separate normal merge commits pushed to their feature branches. Their new required CI results are pending. Preserve each PR's scope and reconcile shared documentation. Do not merge without complete passing required checks, including simulator and iPhoneOS compilation, security/regression validation and artifact integrity.
 
-Only a valid `ios-vX.Y.Z` tag pointing into `ios/main` enters the versioned release-artifact path. Tag-derived versioning and 90-day artifact retention are implemented but not exercised because no release tag was requested or created. Tagging does not create a signed, App Store or production release. Ordinary CI artifacts remain short-lived. Never equate compilation or simulator tests with device execution.
+Keep SQLite JSON-to-database production cutover disabled until the foundation's integrated CI is verified and migration interruption, readback, rollback-after-write, backup exclusion, sidecar file protection and signed-device data protection pass. Never restore an outdated JSON source after SQLite writes without preserving later data.
 
-## v0.5 integration boundary
+## v0.5 agent boundary
 
-At the pinned revision, upstream Rust `openjarvis-agents` uses `rig-core::CompletionModel`; `NativeReActAgent` calls `ToolExecutor` directly, and `OrchestratorAgent` does not yet dispatch tools. ADR-0009 accepts the owner-directed Swift-first adapter using upstream core data/result contracts while retaining Apple Foundation Models. Direct Rust agent linkage remains deferred; any future integration must preserve explicit approval, default-deny capabilities, local inference and signed-device validation.
+ADR-0009 accepts a Swift adapter using pinned upstream agent contract shapes while keeping Apple Foundation Models as the native inference provider. At the pinned upstream revision, Rust `NativeReActAgent` dispatches through `ToolExecutor`, and `OrchestratorAgent` does not yet perform tool dispatch; directly linking it would also bring `rig-core`/`reqwest` and would need a separate approval-safe execution boundary. The Swift adapter is an adaptation, not reuse of the concrete Rust runtime. Continue with deterministic mocked providers, a state machine, bounded planning/actions, explicit approvals, cancellation and recovery tests.
+
+## Next executable work
+
+1. PR #27 and PR #28 base-refresh merge commits are pushed. Await complete required CI results without repeatedly polling queued runners.
+2. Add deterministic scripted intelligence-provider tests and explicit failure classification to the diagnostics/orchestration path.
+3. Implement migration-state/recovery fault injection only after verified SQLite foundation CI; keep production cutover disabled until signed-device protections are established.
+4. Implement one native provider at a time, beginning with read-only Calendar, after scoped permission and approval review.
+5. Continue checkpointed workflows, routing and personalization only with deterministic regression evidence and honest platform limits.
+
+Never equate compilation or simulator execution with physical-device testing. Preserve historical failures and actual test counts; do not fabricate performance measurements.
