@@ -129,15 +129,36 @@ def main():
     if not metadata["available"] or missing or metadata.get("self_distance") is None:
         raise SystemExit("Native evidence is incomplete. No candidate policy may be selected.")
 
+    print("chord-transform-residual",
+          json.dumps(distribution(abs(r["distance"] ** 2 / 2 - r["cosine_from_vectors"])
+                                  for r in rows if r.get("cosine_from_vectors") is not None)))
+
     policies = {}
-    for cutoff in (0.45, 0.7, 0.9, 1.05, 1.15, 1.3):
-        policies[f"absolute-{cutoff}"] = lambda rs, cutoff=cutoff: select_absolute(rs, cutoff)
-    for weight in (0, 0.25, 0.5):
-        for floor in (0.35, 0.50, 0.65):
-            for gap in (0.03, 0.08, 0.15):
-                policies[f"confidence-fusion-{weight}-{floor}-{gap}"] = (
-                    lambda rs, floor=floor, gap=gap, weight=weight: select_confident(rs, floor, gap, weight)
-                )
+    # Score both scales using calibration only. The bool binds the adapter for
+    # each policy, so only one selected candidate is checked on holdout.
+    def scale(policy, use_vectors):
+        if not use_vectors:
+            return policy
+        return lambda rs: policy([{**r, "distance": r["cosine_from_vectors"]} for r in rs])
+
+    for name, cutoffs, use_vectors in [
+        ("framework", (0.45, 0.7, 0.9, 1.05, 1.15, 1.3), False),
+        ("vectors", (0.45, 0.55, 0.65, 0.75, 0.85, 0.95), True)
+    ]:
+        if use_vectors and any(r.get("cosine_from_vectors") is None for r in rows):
+            print("vector-policy-unavailable: missing vector-derived cosine distances")
+            continue
+        for cutoff in cutoffs:
+            policies[f"absolute-{name}-{cutoff}"] = scale(
+                lambda rs, cutoff=cutoff: select_absolute(rs, cutoff), use_vectors
+            )
+        for weight in (0, 0.25, 0.5):
+            for floor in (0.35, 0.50, 0.65):
+                for gap in (0.03, 0.08, 0.15):
+                    policies[f"confidence-fusion-{name}-{weight}-{floor}-{gap}"] = scale(
+                        lambda rs, floor=floor, gap=gap, weight=weight: select_confident(rs, floor, gap, weight),
+                        use_vectors
+                    )
     results = {name: metrics(calibration, policy) for name, policy in policies.items()}
     for name, result in results.items():
         print("calibration", name, json.dumps(result))
