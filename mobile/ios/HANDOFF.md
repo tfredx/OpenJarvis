@@ -37,3 +37,9 @@ PR #28 defines fixed capability IDs, trusted adapter registration, bounded typed
 ## Local validation and next actions
 
 This workspace is Linux without Swift, Cargo or Xcode. Available local checks are `git diff --check` and `mobile/ios/scripts/test-build-scripts.sh`; these do not replace native CI. PR #27 is merged. PR #28 documentation conflicts are reconciled against the PR #27 merge; its required CI must pass before integration. Next independent engineering increment: scripted inference providers and a deterministic bounded orchestration state machine. SQLite migration remains gated as above. Physical install, signing and on-device test execution require the owner; no current performance result is established.
+
+## Scoped Calendar reader increment
+
+Baseline `6206921f` (PR #28 integrated). PRs #29 (diagnostics) and #30 (task result isolation) are independent. This branch adds an unregistered EventKit Calendar reader with a maximum seven-day UTC window, at most ten selected calendars, capped summaries and existing full-access checks before and after fetching. It performs no writes and requests no OS access. The dispatcher checks cancellation and app authorization again after awaiting approval. Tests cover cancellation while approval is outstanding and malformed or excessive date ranges.
+
+Local whitespace and build-script checks passed. Swift, native builds and physical access were not tested here. Next: validate Calendar selection and the approval preview, then obtain permission review before enabling the provider and run the signed-device denial, revocation and scope scenarios.
