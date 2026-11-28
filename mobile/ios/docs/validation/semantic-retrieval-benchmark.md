@@ -6,7 +6,7 @@ On Apple Silicon with Xcode 27.2 build 27B52, the owner ran commit `f3f7570cb5f7
 
 ## What the implementation does
 
-The matcher requests Apple's default English sentence embedding on every lookup. It does not pin a revision, identify query language or normalize input. It uses the original query and note strings and requests cosine distance. Apple documents cosine distance as one minus cosine similarity in the range 0 to 2. Lower means closer. The observed sentence output on the runner used a different scale, as shown below. Availability is optional and nonfinite or out-of-range values now count as unavailable. The probes report supported, current and actual revision, dimension, operating system, self-distance, raw distance, vector-derived cosine distance and the sample coverage of both vectors. Results also compare canonical Unicode plus collapsed whitespace against the current raw input. Revision and asset availability are independent of the Xcode version number.
+The matcher requests Apple's default English sentence embedding on every lookup. It does not pin a revision, identify query language or normalize input. It uses the original query and note strings. The corrective branch computes cosine distance directly from the sentence vectors and retains the framework string distance separately for benchmark replay. Apple documents cosine distance as one minus cosine similarity in the range 0 to 2. Lower means closer. The observed sentence output on the runner used a different scale, as shown below. Availability is optional and nonfinite or out-of-range values now count as unavailable. The probes report supported, current and actual revision, dimension, operating system, self-distance, raw distance, vector-derived cosine distance and the sample coverage of both vectors. Results also compare canonical Unicode plus collapsed whitespace against the current raw input. Revision and asset availability are independent of the Xcode version number.
 
 The existing ranker uses the greater of lexical coverage and a capped semantic score. A single overlapping term can therefore admit a negative even when the native score is unavailable or above the cutoff. The benchmark evaluates the automatic context cap of three. It does not estimate the separate five-item explicit search limit. Requests denying memory remain blocked before retrieval.
 
@@ -43,3 +43,16 @@ On the calibration split a framework cutoff of 1.15 had 28.00% precision, 58.33%
 Evaluate absolute cutoffs and top-one score floors with relative margins and confidence abstention, with or without lexical fusion, on both distance scales. Choose one candidate using only calibration data, requiring precision at least 90%, recall at least 65%, pair false-positive rate at most 5%, and no injection for no-answer queries. Rank qualifying candidates by recall, then lowest false-positive rate. Apply the same gates on holdout without retuning. If none qualifies, leave the production policy unchanged and collect more representative evidence. The macOS CI job requires a qualifying candidate and the preserved native assertion before resuming the full build. A qualifying candidate is still provisional until reproduced on the owner's Mac and iPhone embedding revision and accepted by the preserved regression gate. The small synthetic corpus is useful for detecting unsafe behavior and cannot establish population-level quality.
 
 Relative ordering alone can coexist with a rejected injection. This defect could explain missing context for paraphrases. It cannot by itself explain an inference failure in a request where memory was explicitly disabled. Run the same eight comparative diagnostics twice on the same signed build. Keep model/structured-output failures, agent errors and memory selection observations separate. Use no personal data in artifacts. SQLite storage and native permissions are outside this change.
+
+
+## Corrective candidate experiment
+
+The matcher now computes one minus cosine similarity from native vectors, rather than assuming the string-distance return scale. The original germination threshold assertion remains unchanged. The candidate evaluator also measures directed query-term coverage with the OS English word embedding. Exact lexical matches have full weight, weak and missing associations contribute zero, and the highest-scoring note must meet an absolute score floor and a separation margin. The sentence score may corroborate the term signal. The experiment is evaluated on the unchanged query splits and does not enable a new relevance policy in the application.
+
+For a quick result after the native benchmark, run:
+
+```bash
+grep -E 'metadata|^candidate|^holdout word-alignment|^word-alignment-unavailable' audit/memory-benchmark.txt
+```
+
+Evidence is admissible only with the word embedding available and the unchanged calibration and holdout gates satisfied. An experimental winner still requires policy implementation parity and independent validation before integration.

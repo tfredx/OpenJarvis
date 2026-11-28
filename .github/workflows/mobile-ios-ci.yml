@@ -101,7 +101,7 @@ jobs:
           swift test --filter NativeMemoryEmbeddingTests 2>&1 | tee audit/macos-memory-acceptance.log
           grep -Eq 'Executed [1-9][0-9]* tests?, with 0 failures' audit/macos-memory-acceptance.log
       - name: Require a benchmark candidate that passed calibration and holdout
-        run: grep -Eq '^candidate (absolute-|confidence-fusion-)' audit/memory-benchmark.txt
+        run: grep -Eq '^candidate (absolute-|confidence-fusion-|word-alignment-)' audit/memory-benchmark.txt
       - name: Run upstream bridge host tests and cross-build
         run: ./scripts/build-rust-bridge.sh
       - name: Generate native-required project

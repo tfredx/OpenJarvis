@@ -41,6 +41,19 @@ private func cosineDistance(_ a: [Double]?, _ b: [Double]?) -> Double? {
         )
         let model = NLEmbedding.sentenceEmbedding(for: .english)
         let matcher = OnDeviceMemorySemanticMatcher()
+        let words = NLEmbedding.wordEmbedding(for: .english)
+        var wordVectors: [String: [Double]] = [:]
+        var missingWords: Set<String> = []
+        func wordVector(_ term: String) -> [Double]? {
+            if let cached = wordVectors[term] { return cached }
+            guard !missingWords.contains(term) else { return nil }
+            guard let vector = words?.vector(for: term) else {
+                missingWords.insert(term)
+                return nil
+            }
+            wordVectors[term] = vector
+            return vector
+        }
         var rows: [[String: Any]] = []
         for group in groups {
             let queryVector = model?.vector(for: group.query)
@@ -48,11 +61,17 @@ private func cosineDistance(_ a: [Double]?, _ b: [Double]?) -> Double? {
             for candidate in group.candidates {
                 let noteVector = model?.vector(for: candidate.text)
                 let raw = model?.distance(between: group.query, and: candidate.text, distanceType: .cosine)
-                let clean = matcher.distance(query: normalized(group.query), note: normalized(candidate.text))
+                let clean = model?.distance(between: normalized(group.query), and: normalized(candidate.text), distanceType: .cosine)
+                let coverage = words == nil ? nil : MemoryRetrieval.wordCoverage(terms: terms, note: candidate.text) {
+                    cosineDistance(wordVector($0), wordVector($1))
+                }
                 rows.append([
                     "id": candidate.id,
                     "lexical": MemoryRetrieval.lexicalCoverage(terms: terms, note: candidate.text),
-                    "distance": number(matcher.distance(query: group.query, note: candidate.text)),
+                    // Keep distance on the historical scale for replay fidelity.
+                    "distance": number(raw),
+                    "matcher_cosine": number(matcher.distance(query: group.query, note: candidate.text)),
+                    "word_coverage": number(coverage),
                     "framework_raw": number(raw),
                     "cosine_from_vectors": number(cosineDistance(queryVector, noteVector)),
                     "normalized": number(clean),
@@ -67,7 +86,11 @@ private func cosineDistance(_ a: [Double]?, _ b: [Double]?) -> Double? {
             "current_revision": NLEmbedding.currentSentenceEmbeddingRevision(for: .english),
             "os": ProcessInfo.processInfo.operatingSystemVersionString,
             "language": "en",
-            "metric": "cosine",
+            "metric": "vector_cosine",
+            "word_embedding_available": words != nil,
+            "word_revision": words?.revision as Any? ?? NSNull(),
+            "word_vectors": wordVectors.count,
+            "word_vectors_missing": missingWords.count,
             "self_distance": number(matcher.distance(query: groups[0].query, note: groups[0].query))
         ]
         if let model {

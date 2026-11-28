@@ -159,6 +159,18 @@ def main():
                         lambda rs, floor=floor, gap=gap, weight=weight: select_confident(rs, floor, gap, weight),
                         use_vectors
                     )
+    if all(r.get("word_coverage") is not None and r.get("matcher_cosine") is not None for r in rows):
+        for word_weight in (0.5, 0.75, 1):
+            for floor in (0.2, 0.35, 0.5, 0.65):
+                for gap in (0.03, 0.08, 0.15):
+                    policies[f"word-alignment-{word_weight}-{floor}-{gap}"] = (
+                        lambda rs, w=word_weight, floor=floor, gap=gap: ranked(
+                            rs, lambda r: w * r["word_coverage"] + (1 - w) * (1 - r["matcher_cosine"]),
+                            minimum=floor, cap=1, margin=gap
+                        )
+                    )
+    else:
+        print("word-alignment-unavailable: native word or matcher measurements missing")
     results = {name: metrics(calibration, policy) for name, policy in policies.items()}
     for name, result in results.items():
         print("calibration", name, json.dumps(result))
