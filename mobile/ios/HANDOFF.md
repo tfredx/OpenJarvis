@@ -1,8 +1,8 @@
-# Current handoff — PR #27 merged; PR #28 refreshed; SQLite production cutover gated
+# Current handoff — native capability boundary integrated; diagnostics comparison in review
 
-Date: 2026-11-28 ET. `ios/main` is `84944000710a716af3862adedd7e5ba91bd15a7b` after PR #27; `827735587db3dbae082f06099d89239c7348721d` was the merge of PR #26 on top of PR #25's `ede3b2242979fe0545dc93e74f718a2535a9d338`. PR #25 integrated transactional SQLite session CRUD; its complete required/integrated CI conclusion remains unverified using the available status tools. PR #26 integrated the opt-in synthetic physical-inference diagnostics. GitHub reported both PRs merged. Combined commit-status lookup returned no contexts for PR #26's merge commit; the available workflow-run query returned no associated PR runs. Do not represent this as a verified green CI run.
+Date: 2026-11-27 ET. `ios/main` is `6206921f534f89433fbe14e60069bf26434d1132` after PR #28; `827735587db3dbae082f06099d89239c7348721d` was the merge of PR #26 on top of PR #25's `ede3b2242979fe0545dc93e74f718a2535a9d338`. PR #25 integrated transactional SQLite session CRUD; its complete required/integrated CI conclusion remains unverified using the available status tools. PR #26 integrated the opt-in synthetic physical-inference diagnostics. GitHub reported both PRs merged. Combined commit-status lookup returned no contexts for PR #26's merge commit; the available workflow-run query returned no associated PR runs. Do not represent this as a verified green CI run.
 
-PR #27 is merged at `84944000710a716af3862adedd7e5ba91bd15a7b`; its integrated CI is not independently verified here. PR #28 is refreshed against that integration commit; required CI remains mandatory.
+PR #27 is merged at `84944000710a716af3862adedd7e5ba91bd15a7b`; its integrated CI is not independently verified here. PR #28 merged from `2322145598138f971c6fb7883848f13b2a01d17e`. Its current-head workflow lookup returned no evidence.
 
 ## Owner-reported Mac and device evidence
 
@@ -32,8 +32,12 @@ The owner selected Swift-first orchestration while retaining Apple Foundation Mo
 
 ## PR #28 — permission-neutral native capability interface
 
-PR #28 defines fixed capability IDs, trusted adapter registration, bounded typed values, independent exact authorization and fresh human approval per call; defaults deny. It registers no native provider, adds no usage descriptions/entitlements/permissions, and is not wired into the app. It does not implement Calendar, Reminders, Contacts, Photos or Location functionality. PR #28 includes the PR #27 merge commit; require full Swift/Xcode/security/native CI before integration.
+PR #28 defines fixed capability IDs, trusted adapter registration, bounded typed values, independent exact authorization and fresh human approval per call; defaults deny. It registers no native provider, adds no usage descriptions/entitlements/permissions, and is not wired into the app. It does not implement Calendar, Reminders, Contacts, Photos or Location functionality. PR #28 includes the PR #27 merge commit and is now integrated. This does not establish runtime permissions or provider readiness.
 
-## Local validation and next actions
+## Diagnostic comparison increment
 
-This workspace is Linux without Swift, Cargo or Xcode. Available local checks are `git diff --check` and `mobile/ios/scripts/test-build-scripts.sh`; these do not replace native CI. PR #27 is merged. PR #28 documentation conflicts are reconciled against the PR #27 merge; its required CI must pass before integration. Next independent engineering increment: scripted inference providers and a deterministic bounded orchestration state machine. SQLite migration remains gated as above. Physical install, signing and on-device test execution require the owner; no current performance result is established.
+`fix/ios-diagnostic-stage-evidence` implements report schema 2, comparing plain local generation to the upstream-compatible agent path on identical fixed requests. It records bounded failure categories, generation timings and policy observations without recording prompt, output or error text. It also blocks normal task dispatch during a diagnostic run. The upstream pin remains `556ddf32456bdf5c40195714a3385b339b5f98f9`.
+
+Local validation passed `git diff --check` and `mobile/ios/scripts/test-build-scripts.sh`. Swift, Rust, simulator, device compilation and physical execution were not run in this workspace. Current-head CI and artifact evidence remain pending. The owner can run the consolidated batch in `docs/DEVICE_INSTALL.md` once a verified build containing schema 2 is available.
+
+Next independent work: harden deterministic agent reentry during an active task; design safe SQLite activation without changing the production backend; prepare scoped Calendar read validation behind the existing native capability boundary. Permission review precedes enabling any OS access.
