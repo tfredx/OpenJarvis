@@ -46,10 +46,17 @@ ADR-0009 accepts a Swift adapter using pinned upstream agent contract shapes whi
 Never equate compilation or simulator execution with physical-device testing. Preserve historical failures and actual test counts; do not fabricate performance measurements.
 
 
-## PR #30 — refreshed feature branch
+## PR #29 — comparative diagnostics
+
+Runs identical synthetic inputs through direct Apple generation and the production agent entry point. Report schema 2 adds elapsed time and content-free failure codes. Prevents concurrent live tasks during diagnostics and documents a consolidated signed-device batch.
+
+Depends on integrated PRs #26 and #27. No new permissions, dependencies, network access or persistence changes. Scripted tests cover independent failure evidence and report redaction. Local whitespace and build-script checks passed. Swift, native builds and device tests were unavailable locally. Require full CI before merge. Session creation and hardware behavior remain unverified.
+
+Current branch refreshed against PR #31 integration; required CI pending.
+
+
+## PR #30 — feature increment
 
 A rejected overlapping submission previously cleared the active invocation’s shared tool result list. Collect results inside the invocation and preserve existing checkpoint and approval behavior. Regression suspends the active model call and submits a competing request. Depends on integrated PR #27. Independent of #29. Whitespace and build-script checks passed. Swift, native CI and device execution remain unverified.
 
-Branch documentation additions (historical branch context; current base includes PR #31; CI remains unverified):
-
-Task result isolation is implemented on `fix/ios-task-result-isolation`. The scripted overlap regression requires Swift CI. Durable action records and restart recovery remain future work.
+Refreshed against `c2ffc34f6e50487e79a234975ab2f6991b443b4b` after PR #29 integration. Required CI pending.

@@ -45,14 +45,17 @@ Baseline `6206921f` (PR #28 integrated). PRs #29 (diagnostics) and #30 (task res
 Local whitespace and build-script checks passed. Swift, native builds and physical access were not tested here. Next: validate Calendar selection and the approval preview, then obtain permission review before enabling the provider and run the signed-device denial, revocation and scope scenarios.
 
 
-## PR #30 — refreshed feature branch
+## PR #29 — comparative diagnostics
+
+Runs identical synthetic inputs through direct Apple generation and the production agent entry point. Report schema 2 adds elapsed time and content-free failure codes. Prevents concurrent live tasks during diagnostics and documents a consolidated signed-device batch.
+
+Depends on integrated PRs #26 and #27. No new permissions, dependencies, network access or persistence changes. Scripted tests cover independent failure evidence and report redaction. Local whitespace and build-script checks passed. Swift, native builds and device tests were unavailable locally. Require full CI before merge. Session creation and hardware behavior remain unverified.
+
+Current branch refreshed against PR #31 integration; required CI pending.
+
+
+## PR #30 — feature increment
 
 A rejected overlapping submission previously cleared the active invocation’s shared tool result list. Collect results inside the invocation and preserve existing checkpoint and approval behavior. Regression suspends the active model call and submits a competing request. Depends on integrated PR #27. Independent of #29. Whitespace and build-script checks passed. Swift, native CI and device execution remain unverified.
 
-Branch documentation additions (historical branch context; current base includes PR #31; CI remains unverified):
-
-## Deterministic task result isolation
-
-Baseline `6206921f` (PR #28 integrated). PR #29 separately implements diagnostic comparisons. The task result isolation branch depends on integrated PR #27 and has no dependency on PR #29. Each agent invocation now collects its own tool results so a rejected overlapping submission cannot erase results from an active task. The scripted regression suspends the second model decision and makes an overlapping submission before releasing it.
-
-Local whitespace and build-script checks passed. Swift, native CI and device execution remain unverified for this increment. Continue with typed action checkpoints after this isolation contract is validated.
+Refreshed against `c2ffc34f6e50487e79a234975ab2f6991b443b4b` after PR #29 integration. Required CI pending.
