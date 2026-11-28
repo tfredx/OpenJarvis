@@ -37,3 +37,9 @@ PR #28 defines fixed capability IDs, trusted adapter registration, bounded typed
 ## Local validation and next actions
 
 This workspace is Linux without Swift, Cargo or Xcode. Available local checks are `git diff --check` and `mobile/ios/scripts/test-build-scripts.sh`; these do not replace native CI. PR #27 is merged. PR #28 documentation conflicts are reconciled against the PR #27 merge; its required CI must pass before integration. Next independent engineering increment: scripted inference providers and a deterministic bounded orchestration state machine. SQLite migration remains gated as above. Physical install, signing and on-device test execution require the owner; no current performance result is established.
+
+## Deterministic task result isolation
+
+Baseline `6206921f` (PR #28 integrated). PR #29 separately implements diagnostic comparisons. The task result isolation branch depends on integrated PR #27 and has no dependency on PR #29. Each agent invocation now collects its own tool results so a rejected overlapping submission cannot erase results from an active task. The scripted regression suspends the second model decision and makes an overlapping submission before releasing it.
+
+Local whitespace and build-script checks passed. Swift, native CI and device execution remain unverified for this increment. Continue with typed action checkpoints after this isolation contract is validated.

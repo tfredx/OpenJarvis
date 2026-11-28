@@ -44,3 +44,5 @@ ADR-0009 accepts a Swift adapter using pinned upstream agent contract shapes whi
 5. Continue checkpointed workflows, routing and personalization only with deterministic regression evidence and honest platform limits.
 
 Never equate compilation or simulator execution with physical-device testing. Preserve historical failures and actual test counts; do not fabricate performance measurements.
+
+Task result isolation is implemented on `fix/ios-task-result-isolation`. The scripted overlap regression requires Swift CI. Durable action records and restart recovery remain future work.
