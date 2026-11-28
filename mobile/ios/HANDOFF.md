@@ -52,3 +52,10 @@ Runs identical synthetic inputs through direct Apple generation and the producti
 Depends on integrated PRs #26 and #27. No new permissions, dependencies, network access or persistence changes. Scripted tests cover independent failure evidence and report redaction. Local whitespace and build-script checks passed. Swift, native builds and device tests were unavailable locally. Require full CI before merge. Session creation and hardware behavior remain unverified.
 
 Current branch refreshed against PR #31 integration; required CI pending.
+
+
+## PR #33 — task activity
+
+Shows the latest task using real conversation and checkpoint data. Adds expandable outcomes and existing approval, cancellation and recovery operations to the Activity tab. Documents the supported execution path and deferred background options. Independent of #29–#32. Local whitespace and build-script fixtures passed. Swift/Xcode CI, Dynamic Type and VoiceOver validation remain pending. No additional permissions or storage schema changes.
+
+Refreshed after PR #29 integration; required CI pending.
