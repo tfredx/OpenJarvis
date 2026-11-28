@@ -30,17 +30,15 @@ shopt -s nullglob
 existing=("$DERIVED"/Build/Products/*.xctestrun)
 [[ ${#existing[@]} -eq 0 ]] || { echo "Existing simulator test configuration: use fresh simulator derived data." >&2; exit 1; }
 
-version_args=()
+build_args=(-project ios/OpenJarvisMobile.xcodeproj -scheme OpenJarvisMobile
+  -sdk iphonesimulator -destination "platform=iOS Simulator,id=$DEVICE"
+  -configuration Debug ARCHS=arm64 CODE_SIGNING_ALLOWED=NO
+  -derivedDataPath "$DERIVED")
 if [[ -n "${IOS_RELEASE_VERSION:-}" ]]; then
   : "${IOS_RELEASE_BUILD:?A release build number is required}"
-  version_args+=("MARKETING_VERSION=$IOS_RELEASE_VERSION" "CURRENT_PROJECT_VERSION=$IOS_RELEASE_BUILD")
+  build_args+=("MARKETING_VERSION=$IOS_RELEASE_VERSION" "CURRENT_PROJECT_VERSION=$IOS_RELEASE_BUILD")
 fi
-
-xcodebuild -project ios/OpenJarvisMobile.xcodeproj -scheme OpenJarvisMobile \
-  -sdk iphonesimulator -destination "platform=iOS Simulator,id=$DEVICE" \
-  -configuration Debug ARCHS=arm64 CODE_SIGNING_ALLOWED=NO \
-  "${version_args[@]}" -derivedDataPath "$DERIVED" \
-  build-for-testing 2>&1 | tee audit/xcode-simulator.log
+xcodebuild "${build_args[@]}" build-for-testing 2>&1 | tee audit/xcode-simulator.log
 configurations=("$DERIVED"/Build/Products/*.xctestrun)
 [[ ${#configurations[@]} -eq 1 && -f "${configurations[0]}" ]] || {
   echo "Expected exactly one simulator test configuration from this build." >&2; exit 1;
