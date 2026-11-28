@@ -56,3 +56,12 @@ grep -E 'metadata|^candidate|^holdout word-alignment|^word-alignment-unavailable
 ```
 
 Evidence is admissible only with the word embedding available and the unchanged calibration and holdout gates satisfied. An experimental winner still requires policy implementation parity and independent validation before integration.
+
+
+## Owner Mac validation of answerability
+
+Hosted run [46108460427](https://github.com/tfredx/OpenJarvis/actions/runs/46108460427) showed vector-derived germination distance 0.5675518626625164 and preserved the failing 0.45 assertion. No native word-alignment configuration qualified. One setting that had zero false positives found just two of 12 relevant calibration notes. The sentence matcher ranked the relevant note first for three of 12 answer-bearing calibration queries and five of 12 holdout queries on the earlier artifact.
+
+The opt-in experiment uses Apple Foundation Models locally to select a single note that directly answers a synthetic query, or abstain. The model sees only the question and note texts, without candidate IDs, labels or splits. Two fresh sessions see opposite note order. A note is selected only if both valid verdicts identify the same note. Disagreement abstains. Any failed verdict prevents a candidate decision for the experiment. No runtime retrieval uses this model. No production note is read or exported.
+
+On macOS with Apple Intelligence ready, run `./scripts/benchmark-memory-retrieval.sh --answerability` from `mobile/ios`. It performs 60 model calls and writes `audit/memory-answerability.json` and the metric report. Look for `answerability`, `calibration answerability-consensus`, `holdout answerability-consensus` and `candidate` in the summary. A candidate must satisfy the same 90% precision, 65% recall, 5% false-positive ceiling and zero no-answer injections in both splits. A scorer-only synthetic fixture validated the report plumbing. Native answerability performance is unmeasured.

@@ -79,7 +79,10 @@ def main():
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--distances", type=Path)
     mode.add_argument("--lexical-only", action="store_true")
+    parser.add_argument("--answerability", type=Path)
     args = parser.parse_args()
+    if args.answerability and args.lexical_only:
+        parser.error("--answerability requires --distances")
 
     groups = json.loads((HERE / "semantic-retrieval.json").read_text())
     candidates = [row for group in groups for row in group["candidates"]]
@@ -171,6 +174,29 @@ def main():
                     )
     else:
         print("word-alignment-unavailable: native word or matcher measurements missing")
+    if args.answerability:
+        evidence = json.loads(args.answerability.read_text())
+        judgments = {row["id"]: row for row in evidence}
+        if set(judgments) != {g["id"] for g in groups} or len(judgments) != len(evidence):
+            raise SystemExit("Answerability measurements do not match query groups.")
+        selected = set()
+        failures = disagreements = 0
+        for group in groups:
+            row = judgments[group["id"]]
+            valid = {candidate["id"] for candidate in group["candidates"]} | {None}
+            forward, reverse = row.get("forward"), row.get("reversed")
+            if forward not in valid or reverse not in valid or row["failures"] not in (0, 1, 2):
+                raise SystemExit("Invalid answerability measurement.")
+            failures += row["failures"]
+            disagreements += forward != reverse
+            if row["failures"] == 0 and forward is not None and forward == reverse:
+                selected.add(forward)
+        print("answerability", json.dumps({"failed_verdicts": failures, "order_disagreements": disagreements}))
+        if failures == 0:
+            policies["answerability-consensus"] = lambda rs: {r["id"] for r in rs if r["id"] in selected}
+        else:
+            print("answerability-ineligible: incomplete model evidence")
+
     results = {name: metrics(calibration, policy) for name, policy in policies.items()}
     for name, result in results.items():
         print("calibration", name, json.dumps(result))

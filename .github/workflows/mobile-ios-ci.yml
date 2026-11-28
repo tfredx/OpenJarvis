@@ -94,7 +94,9 @@ jobs:
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen --version | tee audit/xcodegen-version.txt
       - name: Record native memory retrieval benchmark
-        run: ./scripts/benchmark-memory-retrieval.sh
+        run: |
+          xcrun swiftc -parse-as-library -swift-version 6 -typecheck benchmarks/MeasureAnswerability.swift
+          ./scripts/benchmark-memory-retrieval.sh
       - name: Run native Apple embedding acceptance regression
         run: |
           set -o pipefail
