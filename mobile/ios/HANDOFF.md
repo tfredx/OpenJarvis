@@ -45,8 +45,17 @@ Baseline `6206921f` (PR #28 integrated). PRs #29 (diagnostics) and #30 (task res
 Local whitespace and build-script checks passed. Swift, native builds and physical access were not tested here. Next: validate Calendar selection and the approval preview, then obtain permission review before enabling the provider and run the signed-device denial, revocation and scope scenarios.
 
 
-## PR #32 — migration path safety
+## PR #29 — comparative diagnostics
+
+Runs identical synthetic inputs through direct Apple generation and the production agent entry point. Report schema 2 adds elapsed time and content-free failure codes. Prevents concurrent live tasks during diagnostics and documents a consolidated signed-device batch.
+
+Depends on integrated PRs #26 and #27. No new permissions, dependencies, network access or persistence changes. Scripted tests cover independent failure evidence and report redaction. Local whitespace and build-script checks passed. Swift, native builds and device tests were unavailable locally. Require full CI before merge. Session creation and hardware behavior remain unverified.
+
+Current branch refreshed against PR #31 integration; required CI pending.
+
+
+## PR #32 — feature increment
 
 Distinguishes absent paths from dangling symlinks in the migration scratch directory and rejects invalid journal records during cleanup. Tests verify retention of dangling journal and recorded-stage links. Depends on existing shadow migration only and adds no storage activation. Local whitespace and shell fixtures passed. Swift and native CI pending.
 
-Refreshed against PR #31 integration; required CI pending.
+Refreshed against `c2ffc34f6e50487e79a234975ab2f6991b443b4b` after PR #29 integration. Required CI pending.

@@ -25,3 +25,12 @@ After successful CI validation, ordinary branch runs publish unsigned device/sim
 
 ## Device tests
 Use the acceptance checklist in issue #4: launch, bridge identification, real on-device inference and offline request, memory denial/approval/relaunch, checkpoint cancellation/recovery, Shortcut prefill, unavailable model behavior and erase/delete scope. Use synthetic requests only. Record commit, iOS version and results in issue #4, without personal data. A compiled or simulator-tested app does not satisfy physical validation.
+
+## Batch for inference diagnostic report schema 2
+
+Use a clean checkout of the exact CI-validated SHA that contains schema 2. Record `git rev-parse HEAD`, the Actions run and artifact ID, the iPhone model and the full iOS version alongside the report. For a locally signed Xcode build, record the source SHA before generating the project. The report includes bundle version and build number, which can be shared by multiple commits.
+
+1. Install using the developer signing steps above. Enable Apple Intelligence, confirm its local model is available, and resolve any active Jarvis task.
+2. In **Settings → Device diagnostics**, choose **Run local inference diagnostics**. Run twice under the same conditions and export each result via **Share diagnostics report**. Use the same build for both trials.
+3. Expect eight comparisons per report. A healthy basic request returns a nonempty response in both paths. Check that the explicit no-tool/no-memory request shows prior context absent and no approval pending. Review relevant and unrelated memory fixtures separately.
+4. Share the synthetic reports with the recorded build details. Direct success with a malformed agent decision points to the JSON response boundary. Failures in both paths at model availability point to device setup. Report timings are elapsed request times and do not measure time to first response, memory, thermals or battery use.
