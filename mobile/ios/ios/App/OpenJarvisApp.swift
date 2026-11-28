@@ -3,6 +3,7 @@ import FoundationModels
 import JarvisCore
 import AppIntents
 import AVFoundation
+import UIKit
 
 struct AppleEngine: Intelligence {
     func decide(prompt: String) async throws -> Decision {
@@ -23,10 +24,13 @@ enum LocalError: LocalizedError { case unavailable; var errorDescription: String
     @Published private(set) var ready = false
     @Published private(set) var sessions: [SessionSummary] = []
     @Published private(set) var activeID: UUID?
+    @Published private(set) var diagnosticReport = ""
+    @Published private(set) var diagnosticsRunning = false
     @Published var input = ""
     private var coordinator: SessionCoordinator?
     private var task: Task<Void, Never>?
     private let speaker = AVSpeechSynthesizer()
+    private var applicationSupportRoot: URL?
     static let shared = AppState()
 
     var canChangeSessions: Bool {
@@ -41,6 +45,7 @@ enum LocalError: LocalizedError { case unavailable; var errorDescription: String
             var directory = root; var values = URLResourceValues(); values.isExcludedFromBackup = true
             try directory.setResourceValues(values)
             try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: root.path)
+            applicationSupportRoot = root
             coordinator = try SessionCoordinator(root: root, engine: AppleEngine(), bridge: makeConversationBridge(), authorization: makeToolAuthorization())
             refresh()
         } catch { self.error = error.localizedDescription }
@@ -78,6 +83,32 @@ enum LocalError: LocalizedError { case unavailable; var errorDescription: String
     func renameSession(_ id: UUID, title: String) { change { try $0.rename(id, title: title) } }
     func deleteSession(_ id: UUID) { change { try $0.delete(id) } }
     func speak(_ text: String) { speaker.stopSpeaking(at: .immediate); let utterance = AVSpeechUtterance(string: text); utterance.rate = AVSpeechUtteranceDefaultSpeechRate; speaker.speak(utterance) }
+
+    func runDiagnostics() async {
+        guard !diagnosticsRunning, canChangeSessions, let applicationSupportRoot else { return }
+        diagnosticsRunning = true
+        defer { diagnosticsRunning = false }
+        do {
+            let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+            let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
+            let environment = InferenceDiagnosticEnvironment(
+                device: UIDevice.current.model,
+                operatingSystem: ProcessInfo.processInfo.operatingSystemVersionString,
+                appVersion: version,
+                build: build
+            )
+            let report = try await PhysicalInferenceDiagnostics.run(
+                engine: AppleEngine(), root: applicationSupportRoot,
+                environment: environment
+            )
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            diagnosticReport = String(decoding: try encoder.encode(report), as: UTF8.self)
+        } catch {
+            diagnosticReport = "Diagnostics could not complete. No conversation content was included."
+        }
+    }
 
     private func change(_ work: (SessionCoordinator) throws -> Void) {
         guard canChangeSessions, let coordinator else { return }
@@ -141,7 +172,7 @@ struct RootView: View {
             SessionListView(model: model).tabItem { Label("Sessions", systemImage: "rectangle.stack") }
             NavigationStack { List { Section("Task state") { LabeledContent("Status", value: model.snapshot.status.rawValue); LabeledContent("Model decisions", value: String(model.snapshot.steps)); LabeledContent("Pending approval", value: model.snapshot.pending == nil ? "No" : "Yes") }; Section("Execution") { Text("Foreground execution and manual checkpoint recovery. Continuous background scheduling is not enabled in this release.") } }.navigationTitle("Activity") }.tabItem { Label("Activity", systemImage: "waveform.path") }
             NavigationStack { List { if model.snapshot.notes.isEmpty { Text("Approved memories in this conversation appear here.").foregroundStyle(.secondary) }; ForEach(model.snapshot.notes) { note in HStack { Text(note.text); Spacer(); Button(role: .destructive) { model.delete(note.id) } label: { Image(systemName: "trash") }.disabled(model.busy || model.snapshot.status == .running || model.snapshot.status == .approval) } } }.navigationTitle("Memory · " + model.activeTitle) }.tabItem { Label("Memory", systemImage: "brain") }
-            NavigationStack { List { Section("Intelligence") { LabeledContent("Provider", value: "Apple on-device"); LabeledContent("Cloud fallback", value: "Off") }; Section("Build") { LabeledContent("Version", value: "0.3.2"); LabeledContent("Conversation bridge", value: conversationBridgeLabel); Text("Experimental mobile prototype. Agent orchestration remains Swift.") }; Section("Privacy") { Text("Each conversation has its own history, approved memories and task state. Data is stored locally and excluded from backup. Deleting a memory does not erase earlier conversation messages."); Button("Erase all local conversations and memory", role: .destructive) { confirmErase = true }.disabled(!model.canChangeSessions) } }.navigationTitle("Settings") }.tabItem { Label("Settings", systemImage: "gearshape") }
+            NavigationStack { List { Section("Intelligence") { LabeledContent("Provider", value: "Apple on-device"); LabeledContent("Cloud fallback", value: "Off") }; Section("Build") { LabeledContent("Version", value: "0.3.2"); LabeledContent("Conversation bridge", value: conversationBridgeLabel); Text("Experimental mobile prototype. Agent orchestration remains Swift.") }; Section("Device diagnostics") { Text("Runs synthetic prompts with synthetic memory in an isolated temporary session. The shareable report contains timing, state and context-selection checks, not prompts, answers or personal conversation data.").font(.footnote).foregroundStyle(.secondary); Button(model.diagnosticsRunning ? "Running diagnostics…" : "Run local inference diagnostics") { Task { await model.runDiagnostics() } }.disabled(model.diagnosticsRunning || !model.canChangeSessions); if !model.diagnosticReport.isEmpty { ShareLink(item: model.diagnosticReport) { Label("Share diagnostics report", systemImage: "square.and.arrow.up") }; Text("This records a device run only when you start it. No on-device results are assumed.").font(.caption).foregroundStyle(.secondary) } }; Section("Privacy") { Text("Each conversation has its own history, approved memories and task state. Data is stored locally and excluded from backup. Deleting a memory does not erase earlier conversation messages."); Button("Erase all local conversations and memory", role: .destructive) { confirmErase = true }.disabled(!model.canChangeSessions) } }.navigationTitle("Settings") }.tabItem { Label("Settings", systemImage: "gearshape") }
         }.tint(.cyan).safeAreaInset(edge: .top) {
             if !model.error.isEmpty { Text(model.error).font(.footnote).foregroundStyle(.red).padding(8).frame(maxWidth: .infinity).background(.regularMaterial) }
         }.confirmationDialog("Erase all local data?", isPresented: $confirmErase, titleVisibility: .visible) { Button("Erase all", role: .destructive) { model.eraseAll() }; Button("Cancel", role: .cancel) {} }

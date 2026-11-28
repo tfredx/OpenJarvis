@@ -3,12 +3,12 @@
 | Milestone | Exit condition | Status |
 | --- | --- | --- |
 | v0.2.1 | Governance merged; baseline imported; CI configured and observable | Complete |
-| v0.3.0 | Native Rust bridge compiles/links; security and sessions scoped after validation | CI complete; memory retrieval and request-level context policy implemented; physical retest pending |
+| v0.3.0 | Native Rust bridge compiles/links; security and sessions scoped after validation | CI integrated; memory retrieval and request policy implemented; diagnostics harness in PR #26, CI/device validation pending |
 | v0.3.1 | Isolated session storage, task-safe native UI, migration and device tests | Partial: isolated sessions and hosted tests pass; on-device persistence and migration remain unverified |
-| v0.4.0 | Versioned SQLite migration and retrieval tests | Partial: archive, shadow migration and transactional SQLite session operations are implemented; JSON remains authoritative and app/backend cutover is not wired |
+| v0.4.0 | Versioned SQLite migration and retrieval tests | PR #25 transactional operations integrated at `ede3b22`; integrated CI result unknown in this session; JSON remains authoritative and production cutover is not wired |
 | v0.4.1 | Shadow migration rehearsal preserves source bytes; interruption recovery is journaled and fails closed | Complete in CI; JSON remains authoritative, no live cutover |
 | CI/CD | Versioned unsigned IPA artifacts and validation-gated CI | Complete and integrated in PR #20; release-tag path not yet exercised |
-| v0.5.0 | Original upstream agent orchestration integrated through an approval-preserving adapter and tested | Blocked on a consequential Swift/Rust orchestration boundary decision |
+| v0.5.0 | Swift-first orchestration follows pinned upstream OjAgent/AgentContext/AgentResult contracts with local inference and approvals | Implemented in PR #27; CI pending; Rust `openjarvis-agents` implementation not linked |
 | v0.6.0 | Native device tools, scoped permissions and approvals | Not started |
 | v0.7.0 | Checkpointed background workflows, measured device limits | Not started |
 | v0.8.0 | Additional local models and compute routing | Not started |
@@ -25,10 +25,12 @@ PR #20 added the existing repository security audit as a required CI dependency 
 
 PR #22 initial CI identified and corrected a weak lexical match and a context-window issue; an intermediate CI run also caught a truncated test source transfer, which was restored. PR run 46082211356 passed all seven jobs. Integrated run 46083177104 also passed all seven: 62 portable Swift tests, 10 Rust bridge tests/cross-build, 11 hosted native integration tests, five security audits, unsigned arm64 device/simulator builds and artifact packaging. Integrated development artifact 15237619676 is unsigned and does not attest to physical-device execution.
 
-PR #24 run 46086033077 passed the 66-test portable Swift suite, all security jobs, 10 Rust bridge tests, both unsigned builds and 11 hosted native integration tests, and uploaded development IPA artifact 15239452414. Its native job was ultimately cancelled at final diagnostics-artifact retention; PR #25 carries the same tree on a fresh PR ref after the targeted job rerun remained queued without starting; neither PR may merge until a complete required run passes. SQLite CRUD remains isolated from production JSON persistence. A Python SQLite simulation passed 189 session-position compaction cases; Mac CI must provide the Swift and Apple-platform validation.
+PR #24's native run 46086033077 executed the 66-test portable suite, security jobs, 10 Rust bridge tests, both unsigned builds and hosted native integration tests, and uploaded artifact 15239452414; the native job ended cancelled at final diagnostics-artifact retention. PR #25 merged the same SQLite operations into `ios/main` as `ede3b22`. Its integrated push-run is not exposed by the current connected status tools, so its validation result is unknown here. The production app still uses JSON; cutover is gated on confirmed CI and physical data-protection evidence. The prior local Python SQLite position-compaction simulation covered 189 cases.
+
+PR #26 adds synthetic inference diagnostics with redacted reporting; no CI or physical result is asserted. PR #27 implements the Swift-first upstream agent contract adapter; test sources are authored but were not run because this environment lacks Swift/Xcode. Both need complete required CI before merge. PR #27 is being updated with the merged base through a normal merge commit, not a force push.
 
 Only a valid `ios-vX.Y.Z` tag pointing into `ios/main` enters the versioned release-artifact path. Tag-derived versioning and 90-day artifact retention are implemented but not exercised because no release tag was requested or created. Tagging does not create a signed, App Store or production release. Ordinary CI artifacts remain short-lived. Never equate compilation or simulator tests with device execution.
 
-## v0.5 integration constraint
+## v0.5 integration boundary
 
-At the pinned source revision, upstream `openjarvis-agents` uses `rig-core::CompletionModel`; `NativeReActAgent` calls `ToolExecutor` directly, and `OrchestratorAgent` does not yet dispatch tools. The app's inference provider is asynchronous Apple Foundation Models in Swift. The Rust `rig-core` dependency graph includes `reqwest`, which ADR-0002 intentionally excludes from the mobile bridge. Select an integration boundary before changing runtime architecture. Any agent integration must retain explicit user approval, default-deny capabilities, local inference and the current signed-device validation gate.
+At the pinned revision, concrete Rust `openjarvis-agents` uses `rig-core::CompletionModel`; `NativeReActAgent` calls `ToolExecutor` directly, and `OrchestratorAgent` does not yet dispatch tools. ADR-0009 accepts the owner-directed Swift-first adapter using upstream core data/result contracts while retaining Apple Foundation Models. Direct Rust agent linkage remains deferred to avoid `rig-core`/`reqwest` and the unguarded executor. Any future integration must retain explicit approval, default-deny capabilities, local inference and signed-device validation.
