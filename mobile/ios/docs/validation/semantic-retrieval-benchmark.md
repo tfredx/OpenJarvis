@@ -83,3 +83,9 @@ python3 benchmarks/analyze-retrieval.py --distances audit/memory-distances.json 
 ```
 
 `grounded-listwise-corroborated` keeps unique pointwise approvals. For an ambiguous group, exactly one note must have grounded support and at least one of the saved forward and reversed listwise verdicts must endorse that note. Incomplete model evidence makes this policy ineligible. The replay consumes saved verdicts without invoking Apple models. The policy needs to reject the observed no-answer selection and retain at least eight of the nine correct calibration selections to reach holdout. The existing holdout gate, production behavior and historical native regression are unchanged. Owner replay is pending.
+
+### Owner Mac replay at 274e92e8
+
+The query-specificity rule retrieved 9 of 12 relevant calibration notes, with zero false selections. On holdout it retrieved all 12 relevant notes and selected one irrelevant note for a query with no answer. Precision was 12/13 (92.31%), pair false-positive rate was 1/48 (2.08%), and one of three unanswerable holdout queries received a note. This fails the zero no-answer injection gate. The scorer correctly returned `candidate none`. No policy qualified for production.
+
+The next investigation uses the four existing synthetic audit JSON files (distances, pointwise, grounded and answerability) to trace the false selection. Their schemas contain synthetic IDs, numeric measurements, environment metadata and model verdicts. The files are generated on the owner's Mac. Any policy designed using errors from this holdout needs a fresh independent evaluation set. The original native regression and comparative iPhone diagnostics remain open.
