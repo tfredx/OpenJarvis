@@ -44,3 +44,5 @@ ADR-0009 accepts a Swift adapter using pinned upstream agent contract shapes whi
 5. Continue checkpointed workflows, routing and personalization only with deterministic regression evidence and honest platform limits.
 
 Never equate compilation or simulator execution with physical-device testing. Preserve historical failures and actual test counts; do not fabricate performance measurements.
+
+SQLite rehearsal recovery rejects dangling journal and stage links on `fix/ios-shadow-recovery-links`. This is an independent safety fix while the production backend remains gated. Native CI and physical file-protection evidence remain open.

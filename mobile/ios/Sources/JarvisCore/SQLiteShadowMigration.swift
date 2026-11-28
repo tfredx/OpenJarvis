@@ -37,7 +37,7 @@ public enum SQLiteMigrationError: Error, LocalizedError, Equatable {
         let fm = FileManager.default
         let journal = root.appendingPathComponent(journalName)
         let entries = try fm.contentsOfDirectory(atPath: root.path)
-        if !fm.fileExists(atPath: journal.path) {
+        if !entries.contains(journalName) {
             guard !entries.contains(where: { $0.hasPrefix(stagePrefix) }) else {
                 throw SQLiteMigrationError.untrackedStage
             }
@@ -56,7 +56,7 @@ public enum SQLiteMigrationError: Error, LocalizedError, Equatable {
             throw SQLiteMigrationError.untrackedStage
         }
         let stage = root.appendingPathComponent(record.stageDirectory, isDirectory: true)
-        if fm.fileExists(atPath: stage.path) {
+        if stages.contains(record.stageDirectory) {
             guard try itemType(at: stage, fileManager: fm) == .typeDirectory else {
                 throw SQLiteMigrationError.invalidJournal
             }
@@ -93,6 +93,9 @@ public enum SQLiteMigrationError: Error, LocalizedError, Equatable {
         guard try itemType(at: journal, fileManager: fm) == .typeRegular,
               let data = try? Data(contentsOf: journal),
               let record = try? JSONDecoder().decode(Record.self, from: data),
+              record.version == 1,
+              let id = UUID(uuidString: String(record.stageDirectory.dropFirst(stagePrefix.count))),
+              record.stageDirectory == stagePrefix + id.uuidString,
               stage.lastPathComponent == record.stageDirectory else {
             throw SQLiteMigrationError.invalidJournal
         }

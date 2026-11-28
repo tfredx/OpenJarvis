@@ -37,3 +37,7 @@ PR #28 defines fixed capability IDs, trusted adapter registration, bounded typed
 ## Local validation and next actions
 
 This workspace is Linux without Swift, Cargo or Xcode. Available local checks are `git diff --check` and `mobile/ios/scripts/test-build-scripts.sh`; these do not replace native CI. PR #27 is merged. PR #28 documentation conflicts are reconciled against the PR #27 merge; its required CI must pass before integration. Next independent engineering increment: scripted inference providers and a deterministic bounded orchestration state machine. SQLite migration remains gated as above. Physical install, signing and on-device test execution require the owner; no current performance result is established.
+
+## SQLite rehearsal recovery hardening
+
+Baseline `6206921f` (PR #28 integrated). PRs #29–#31 are independent. This branch makes journal recovery fail closed on dangling symbolic links, retaining both the staged evidence and the journal. Regression coverage includes dangling journal and recorded-stage paths. JSON remains authoritative. Local whitespace and build-script checks passed. Swift and native CI remain unverified. The next persistence increment is the isolated activation and recovery state machine with fault injection.
