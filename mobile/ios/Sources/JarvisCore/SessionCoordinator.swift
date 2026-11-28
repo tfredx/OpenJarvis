@@ -27,7 +27,11 @@ import Foundation
 
     public func submit(_ text: String) async throws {
         guard canChangeSessions else { throw AgentError.busy }
-        try await execute { try await $0.start(text) }
+        try await execute { agent in
+            let context = try await agent.upstreamContext(for: text)
+            _ = try await agent.run(input: text, context: context)
+            return await agent.snapshot()
+        }
     }
     public func resume() async throws { try await execute { try await $0.resume() } }
     public func approve(_ allow: Bool) async throws { try await execute { try await $0.approve(allow) } }

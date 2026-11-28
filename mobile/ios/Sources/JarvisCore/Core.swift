@@ -22,22 +22,74 @@ public struct Snapshot: Codable, Sendable, Equatable {
     public var memoryAccessDenied: Bool? = false
     public init() {}
 }
-public enum AgentError: Error, LocalizedError {
-    case busy, empty, invalidDecision, stepLimit, noApproval, tooLong
-    public var errorDescription: String? { switch self { case .busy: "A task is already active."; case .empty: "Enter a request."; case .invalidDecision: "The model requested an unsupported action."; case .stepLimit: "Agent step limit reached."; case .noApproval: "No action is awaiting approval."; case .tooLong: "Input exceeds the local limit." } }
+private struct MobileInferenceEnvelope: Encodable {
+    let input: String
+    let context: UpstreamAgentContext
 }
-public actor Agent {
+public enum AgentError: Error, LocalizedError, Equatable {
+    case busy, empty, invalidDecision, invalidContext, stepLimit, noApproval, tooLong
+    public var errorDescription: String? { switch self { case .busy: "A task is already active."; case .empty: "Enter a request."; case .invalidDecision: "The model requested an unsupported action."; case .invalidContext: "The supplied agent context does not match the active local session."; case .stepLimit: "Agent step limit reached."; case .noApproval: "No action is awaiting approval."; case .tooLong: "Input exceeds the local limit." } }
+}
+public actor Agent: OpenJarvisAgentRuntime {
     private let engine: any Intelligence; private let file: URL; private var state: Snapshot
     private var active = false
     private let maxSteps: Int
     private let bridge: any ConversationBridge
     private let authorization: any ToolAuthorization
     private let memoryMatcher: any MemorySemanticMatcher
+    private var lastToolResults: [UpstreamToolResult] = []
+    public nonisolated let agentID = "ios-foundation-models"
     public init(engine: any Intelligence, file: URL, maxSteps: Int = 6, bridge: any ConversationBridge = SwiftConversationBridge(), authorization: any ToolAuthorization = LocalToolAuthorization(), memoryMatcher: any MemorySemanticMatcher = OnDeviceMemorySemanticMatcher()) throws {
         self.engine = engine; self.file = file; self.maxSteps = max(1, maxSteps); self.bridge = bridge; self.authorization = authorization; self.memoryMatcher = memoryMatcher
         if FileManager.default.fileExists(atPath: file.path) { state = try JSONDecoder().decode(Snapshot.self, from: Data(contentsOf: file)) } else { state = Snapshot() }
     }
     public func snapshot() -> Snapshot { state }
+    public nonisolated func acceptsTools() -> Bool { true }
+
+    /// Trusted task input supplied to the upstream-compatible `OjAgent` boundary.
+    /// Memory results are retrieved only inside `run`, and model output cannot add tools.
+    public func upstreamContext(for input: String) throws -> UpstreamAgentContext {
+        let messages = try state.messages.map { message -> UpstreamConversationMessage in
+            guard let role = WireMessage.Role(rawValue: message.role) else { throw BridgeError.invalidRole }
+            return UpstreamConversationMessage(role: role, content: message.text)
+        }
+        let normalized = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        let candidateActions = RequestToolPolicy.deniesTools(in: normalized)
+            ? ["reply"]
+            : RequestToolPolicy.deniesMemory(in: normalized)
+                ? ["reply", "current_time"]
+                : ["reply", "search_memory", "current_time", "save_memory"]
+        return UpstreamAgentContext(
+            conversation: UpstreamConversation(messages: messages),
+            tools: candidateActions.filter(permits),
+            metadata: [
+                "default_deny": .bool(true),
+                "inference_provider": .string("apple_foundation_models"),
+                "memory_write_requires_human_approval": .bool(true)
+            ]
+        )
+    }
+
+    /// Swift-native implementation of the pinned upstream `OjAgent` call shape.
+    /// Context is only accepted when it exactly matches trusted session state and
+    /// locally derived permissions; this adapter never trusts model-provided grants.
+    public func run(input: String, context: UpstreamAgentContext?) async throws -> UpstreamAgentResult {
+        let trustedContext = try upstreamContext(for: input)
+        if let context, context != trustedContext { throw AgentError.invalidContext }
+        lastToolResults = []
+        let result = try await start(input)
+        let reply = result.status == .complete
+            ? (result.messages.last(where: { $0.role == "assistant" })?.text ?? "") : ""
+        return UpstreamAgentResult(
+            content: reply,
+            toolResults: lastToolResults,
+            turns: result.steps,
+            metadata: [
+                "status": .string(result.status.rawValue),
+                "pending_approval": .bool(result.status == .approval && result.pending != nil)
+            ]
+        )
+    }
     private func permits(_ action: String) -> Bool {
         LocalToolAuthorization().permits(action) && authorization.permits(action)
     }
@@ -65,7 +117,11 @@ public actor Agent {
                   !pending.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   pending.value.count <= 2000 else { throw AgentError.invalidDecision }
         }
-        if allow { state.notes.append(Note(pending.value)); state.messages.append(Message("tool", "Memory saved by explicit user approval.")) }
+        if allow {
+            state.notes.append(Note(pending.value))
+            state.messages.append(Message("tool", "Memory saved by explicit user approval."))
+            lastToolResults.append(UpstreamToolResult(toolName: "save_memory", content: "Saved after explicit user approval."))
+        }
         else { state.memoryWriteDenied = true; state.messages.append(Message("tool", "User declined memory write. Do not request it again in this task.")) }
         state.pending = nil; state.status = .running
         if state.steps >= maxSteps {
@@ -108,8 +164,18 @@ public actor Agent {
                     return WireMessage(role: role, content: String(message.text.prefix(1000)))
                 }
                 let window = try verifiedWindow(WireConversation(messages: history, maxMessages: 6), using: bridge)
-                let context = window.map { ["role": $0.role.rawValue, "text": $0.content] }
-                let payload = try JSONSerialization.data(withJSONObject: ["request": latest, "history": context, "memory": relevant.map { String($0.prefix(500)) }], options: [.sortedKeys])
+                let upstreamContext = UpstreamAgentContext(
+                    conversation: UpstreamConversation(messages: window.map {
+                        UpstreamConversationMessage(role: $0.role, content: $0.content)
+                    }, maxMessages: 6),
+                    tools: allowedActions(for: latest),
+                    memoryResults: relevant.map { .string(String($0.prefix(500))) },
+                    metadata: [
+                        "default_deny": .bool(true),
+                        "memory_write_requires_human_approval": .bool(true)
+                    ]
+                )
+                let payload = try JSONEncoder().encode(MobileInferenceEnvelope(input: latest, context: upstreamContext))
                 let actionPolicy = state.toolUseDenied == true
                     ? "Only action allowed for this task: reply. The user prohibited tools and memory; do not access memory or request any tool action."
                     : state.memoryAccessDenied == true
@@ -134,8 +200,14 @@ public actor Agent {
                 }
                 switch d.action {
                 case "reply": state.messages.append(Message("assistant", d.value)); state.status = .complete; try save(); return state
-                case "search_memory": state.messages.append(Message("tool", "Memory matches: " + search(d.value).prefix(5).map(\.text).joined(separator: "\n")))
-                case "current_time": state.messages.append(Message("tool", ISO8601DateFormatter().string(from: Date())))
+                case "search_memory":
+                    let matches = search(d.value).prefix(5).map(\.text).joined(separator: "\n")
+                    lastToolResults.append(UpstreamToolResult(toolName: "search_memory", content: matches))
+                    state.messages.append(Message("tool", "Memory matches: " + matches))
+                case "current_time":
+                    let value = ISO8601DateFormatter().string(from: Date())
+                    lastToolResults.append(UpstreamToolResult(toolName: "current_time", content: value))
+                    state.messages.append(Message("tool", value))
                 case "save_memory":
                     if state.memoryWriteDenied == true { state.messages.append(Message("tool", "Memory write blocked: user previously declined.")); try save(); continue }
                     guard !d.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, d.value.count <= 2000 else { throw AgentError.invalidDecision }
@@ -154,5 +226,14 @@ public actor Agent {
         MemoryRetrieval.rank(query: q, notes: Array(state.notes.reversed())) { [memoryMatcher] query, note in
             memoryMatcher.distance(query: query, note: note)
         }
+    }
+
+    private func allowedActions(for input: String) -> [String] {
+        let candidates = RequestToolPolicy.deniesTools(in: input)
+            ? ["reply"]
+            : RequestToolPolicy.deniesMemory(in: input)
+                ? ["reply", "current_time"]
+                : ["reply", "search_memory", "current_time", "save_memory"]
+        return candidates.filter(permits)
     }
 }
