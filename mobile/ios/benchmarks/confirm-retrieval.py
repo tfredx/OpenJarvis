@@ -48,16 +48,30 @@ def score(groups, pointwise, verified):
     source = (root / "Sources/JarvisCore/MemoryRetrieval.swift").read_text()
     words = set(re.findall(r'"([a-z]+)"', source.split("private static let stopWords", 1)[1].split("]", 1)[0]))
     eligible = {ident for group in groups for ident in qualified_candidates(group, words)}
+    overlaps = {}
+    qualified_by_time = set()
+    for group in groups:
+        terms = scorer["query_terms"](group["query"], words)
+        if re.search(r"\b(?:after|before|until|since|during)\b", group["query"], re.IGNORECASE):
+            qualified_by_time.update(note["id"] for note in group["candidates"])
+        for note in group["candidates"]:
+            overlaps[note["id"]] = terms.intersection(re.findall(r"[a-z0-9]+", note["text"].lower()))
 
     def policy(rows):
         accepted = {i for i in approvals(rows) if grounded[i]}
-        return accepted & eligible if len(accepted) == 1 else set()
+        if len(accepted) > 1 and accepted & qualified_by_time:
+            return set()
+        # Break a tie only if one verified note covers every matched term
+        # of every competitor and contributes an additional matched term.
+        return {i for i in accepted if i in eligible
+                and all(overlaps[i] > overlaps[j] for j in accepted if j != i)}
     return scorer["metrics"](groups, policy)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--saved-singletons", type=Path)
+    parser.add_argument("--saved-confirmation", type=Path)
     args = parser.parse_args()
     with tempfile.TemporaryDirectory() as tmp:
         binary = Path(tmp) / "judge"
@@ -65,25 +79,31 @@ def main():
                         here / "MeasureAnswerability.swift", "-o", binary], check=True)
         directory = Path(tempfile.mkdtemp(prefix="confirmation-", dir=root / "audit"))
         print("Evidence directory", directory, flush=True)
-        for fresh in (False, True):
-            corpus = here / ("retrieval-confirmation.json" if fresh else "semantic-retrieval.json")
+        for dataset in ["semantic-retrieval", "retrieval-confirmation", "retrieval-replication"]:
+            original = dataset == "semantic-retrieval"
+            corpus = here / (dataset + ".json")
             groups = json.loads(corpus.read_text())
-            point = root / "audit/memory-pointwise.json"
-            if fresh:
-                point = directory / "fresh-pointwise.json"
-                subprocess.run([binary, corpus, point, "--pointwise"], check=True)
-            verified = directory / (corpus.stem + "-verified.json")
-            mode = "--verify-all" if fresh else "--verify-singles"
-            if not fresh and args.saved_singletons:
-                verified = args.saved_singletons
+            point = directory / (dataset + "-pointwise.json")
+            verified = directory / (dataset + "-verified.json")
+            if original:
+                point = root / "audit/memory-pointwise.json"
+            if dataset == "retrieval-confirmation" and args.saved_confirmation:
+                point = args.saved_confirmation / "fresh-pointwise.json"
+                verified = args.saved_confirmation / (dataset + "-verified.json")
             else:
-                subprocess.run([binary, corpus, verified, mode, point], check=True)
+                if not original:
+                    subprocess.run([binary, corpus, point, "--pointwise"], check=True)
+                if original and args.saved_singletons:
+                    verified = args.saved_singletons
+                else:
+                    mode = "--verify-singles" if original else "--verify-all"
+                    subprocess.run([binary, corpus, verified, mode, point], check=True)
             decisions = json.loads(point.read_text())
             evidence = json.loads(verified.read_text())
-            if not fresh:
+            if original:
                 evidence.extend(json.loads((root / "audit/memory-grounded.json").read_text()))
-            for name in (["confirmation"] if fresh else ["calibration", "previous-holdout"]):
-                subset = groups if fresh else [g for g in groups if g["split"] == name.removeprefix("previous-")]
+            for name in (["calibration", "previous-holdout"] if original else [dataset]):
+                subset = groups if not original else [g for g in groups if g["split"] == name.removeprefix("previous-")]
                 ids = {c["id"] for g in subset for c in g["candidates"]}
                 result = score(subset, [r for r in decisions if r["id"] in ids],
                                [r for r in evidence if r["id"] in ids])
