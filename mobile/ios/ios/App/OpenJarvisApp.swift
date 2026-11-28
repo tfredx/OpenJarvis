@@ -7,15 +7,34 @@ import UIKit
 
 struct AppleEngine: Intelligence {
     func decide(prompt: String) async throws -> Decision {
-        guard SystemLanguageModel.default.isAvailable else { throw LocalError.unavailable }
-        let session = LanguageModelSession(instructions: "You are a careful local assistant. Follow the requested JSON schema; output JSON only.")
-        let response = try await session.respond(to: prompt)
-        var text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-        if text.hasPrefix("```"), let first = text.firstIndex(of: "\n"), let last = text.range(of: "```", options: .backwards), last.lowerBound > first { text = String(text[text.index(after: first)..<last.lowerBound]) }
-        return try JSONDecoder().decode(Decision.self, from: Data(text.utf8))
+        var text = try await generate(
+            prompt: prompt,
+            instructions: "You are a careful local assistant. Follow the requested JSON schema; output JSON only."
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.hasPrefix("```"), let first = text.firstIndex(of: "\n"),
+           let last = text.range(of: "```", options: .backwards), last.lowerBound > first {
+            text = String(text[text.index(after: first)..<last.lowerBound])
+        }
+        do { return try JSONDecoder().decode(Decision.self, from: Data(text.utf8)) }
+        catch { throw InferenceFailure.malformedDecision }
+    }
+
+    func directReply(prompt: String) async throws -> String {
+        try await generate(prompt: prompt, instructions: "Answer the user's request directly in plain text.")
+    }
+
+    private func generate(prompt: String, instructions: String) async throws -> String {
+        try Task.checkCancellation()
+        guard SystemLanguageModel.default.isAvailable else { throw InferenceFailure.modelUnavailable }
+        let session = LanguageModelSession(instructions: instructions)
+        do { return try await session.respond(to: prompt).content }
+        catch is CancellationError { throw CancellationError() }
+        catch {
+            try Task.checkCancellation()
+            throw InferenceFailure.generation
+        }
     }
 }
-enum LocalError: LocalizedError { case unavailable; var errorDescription: String? { "Apple Intelligence is unavailable. Enable it in Settings and allow the model to finish downloading." } }
 
 @MainActor final class AppState: ObservableObject {
     @Published private(set) var snapshot = Snapshot()
@@ -34,7 +53,7 @@ enum LocalError: LocalizedError { case unavailable; var errorDescription: String
     static let shared = AppState()
 
     var canChangeSessions: Bool {
-        !busy && ready && coordinator?.canChangeSessions == true
+        !busy && !diagnosticsRunning && ready && coordinator?.canChangeSessions == true
     }
     var activeTitle: String { sessions.first { $0.id == activeID }?.title ?? "Jarvis" }
 
@@ -86,6 +105,7 @@ enum LocalError: LocalizedError { case unavailable; var errorDescription: String
 
     func runDiagnostics() async {
         guard !diagnosticsRunning, canChangeSessions, let applicationSupportRoot else { return }
+        diagnosticReport = ""
         diagnosticsRunning = true
         defer { diagnosticsRunning = false }
         do {
@@ -99,7 +119,9 @@ enum LocalError: LocalizedError { case unavailable; var errorDescription: String
             )
             let report = try await PhysicalInferenceDiagnostics.run(
                 engine: AppleEngine(), root: applicationSupportRoot,
-                environment: environment
+                environment: environment, bridge: makeConversationBridge(),
+                authorization: makeToolAuthorization(),
+                directReply: { try await AppleEngine().directReply(prompt: $0) }
             )
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
@@ -117,7 +139,7 @@ enum LocalError: LocalizedError { case unavailable; var errorDescription: String
         refresh()
     }
     private func perform(_ work: @escaping @MainActor (SessionCoordinator) async throws -> Void) {
-        guard !busy, ready, let coordinator else { return }
+        guard !busy, !diagnosticsRunning, ready, let coordinator else { return }
         busy = true; error = ""
         task = Task {
             defer { refresh(); busy = false; task = nil }

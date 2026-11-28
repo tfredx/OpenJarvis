@@ -16,10 +16,45 @@ public struct InferenceDiagnosticEnvironment: Codable, Sendable, Equatable {
     }
 }
 
+/// Stable categories for local diagnosis. Reports never include underlying errors.
+public enum InferenceFailure: String, Codable, Sendable, LocalizedError {
+    case modelUnavailable, generation, malformedDecision, contextAssembly
+    case rejectedDecision, unexpectedApproval, stepLimit, cancelled, emptyReply, unclassified
+
+    public var errorDescription: String? {
+        switch self {
+        case .modelUnavailable: "Apple Intelligence is unavailable. Check Settings and model download status."
+        case .generation: "The local model could not generate a response."
+        case .malformedDecision: "The local model did not return a valid action."
+        default: "Local inference could not complete."
+        }
+    }
+
+    static func classify(_ error: any Error) -> Self {
+        if let failure = error as? Self { return failure }
+        if error is CancellationError { return .cancelled }
+        if error is BridgeError { return .contextAssembly }
+        switch error as? AgentError {
+        case .invalidContext: return .contextAssembly
+        case .invalidDecision, .tooLong: return .rejectedDecision
+        case .stepLimit: return .stepLimit
+        default: return .unclassified
+        }
+    }
+}
+
+public struct DirectInferenceObservation: Codable, Sendable, Equatable {
+    public let elapsedMilliseconds: Int
+    public let replyCharacters: Int
+    public let failure: InferenceFailure?
+}
+
 public struct InferenceDiagnosticObservation: Codable, Sendable, Equatable {
     public let scenario: String
     public let elapsedMilliseconds: Int
     public let terminalState: String
+    public let failure: InferenceFailure?
+    public let direct: DirectInferenceObservation?
     public let modelSteps: Int
     public let assistantReplyCharacters: Int
     public let pendingApproval: Bool
@@ -37,7 +72,7 @@ public struct InferenceDiagnosticReport: Codable, Sendable, Equatable {
 
     public init(startedAt: Date, completedAt: Date, environment: InferenceDiagnosticEnvironment,
                 observations: [InferenceDiagnosticObservation]) {
-        schemaVersion = 1
+        schemaVersion = 2
         self.startedAt = startedAt
         self.completedAt = completedAt
         self.environment = environment
@@ -76,7 +111,10 @@ public enum PhysicalInferenceDiagnostics {
     /// `root` should be the app's protected Application Support directory.
     public static func run(engine: any Intelligence, root: URL,
                            environment: InferenceDiagnosticEnvironment,
-                           memoryMatcher: any MemorySemanticMatcher = OnDeviceMemorySemanticMatcher()) async throws -> InferenceDiagnosticReport {
+                           memoryMatcher: any MemorySemanticMatcher = OnDeviceMemorySemanticMatcher(),
+                           bridge: any ConversationBridge = SwiftConversationBridge(),
+                           authorization: any ToolAuthorization = LocalToolAuthorization(),
+                           directReply: (@Sendable (String) async throws -> String)? = nil) async throws -> InferenceDiagnosticReport {
         let startedAt = Date()
         let temporaryDirectory = root.appendingPathComponent("diagnostics-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
@@ -84,6 +122,7 @@ public enum PhysicalInferenceDiagnostics {
         do {
             var observations: [InferenceDiagnosticObservation] = []
             for scenario in scenarios {
+                try Task.checkCancellation()
                 var seed = Snapshot()
                 seed.messages = [Message("user", historyMarker)]
                 seed.notes = [Note(memoryText)]
@@ -91,25 +130,58 @@ public enum PhysicalInferenceDiagnostics {
                 try JSONEncoder().encode(seed).write(to: file, options: .atomic)
 
                 let recorder = DiagnosticIntelligence(base: engine)
-                let agent = try Agent(engine: recorder, file: file, maxSteps: 4, memoryMatcher: memoryMatcher)
+                let agent = try Agent(engine: recorder, file: file, maxSteps: 6, bridge: bridge,
+                                      authorization: authorization, memoryMatcher: memoryMatcher)
                 let startTime = ProcessInfo.processInfo.systemUptime
-                do { _ = try await agent.start(scenario.request) }
-                catch { /* Record the terminal state; never serialize model/error text. */ }
+                var failure: InferenceFailure?
+                do {
+                    let context = try await agent.upstreamContext(for: scenario.request)
+                    _ = try await agent.run(input: scenario.request, context: context)
+                } catch {
+                    try Task.checkCancellation()
+                    failure = InferenceFailure.classify(error)
+                }
                 let elapsed = max(0, Int((ProcessInfo.processInfo.systemUptime - startTime) * 1000))
                 let snapshot = await agent.snapshot()
                 let trace = await recorder.trace()
                 let reply = snapshot.messages.last(where: { $0.role == "assistant" })?.text ?? ""
-                let contextWasAbsent = scenario.deniesContext
+                if snapshot.status == .complete && reply.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    failure = .emptyReply
+                } else if snapshot.status == .approval {
+                    failure = .unexpectedApproval
+                }
+                let contextWasAbsent = scenario.deniesContext && !trace.isEmpty
                     ? !trace.contains(where: { $0.contains(memoryMarker) || $0.contains(historyMarker) })
                     : nil
-                let expectedMemoryInContext = scenario.expectsMemory.map { expected in
+                let expectedMemoryInContext = (trace.isEmpty ? nil : scenario.expectsMemory).map { expected in
                     let wasIncluded = trace.contains(where: { $0.contains(memoryMarker) })
                     return expected == wasIncluded
+                }
+                var direct: DirectInferenceObservation?
+                if let directReply {
+                    let start = ProcessInfo.processInfo.systemUptime
+                    var characters = 0
+                    var directFailure: InferenceFailure?
+                    do {
+                        let response = try await directReply(scenario.request)
+                        characters = response.trimmingCharacters(in: .whitespacesAndNewlines).count
+                        if characters == 0 { directFailure = .emptyReply }
+                    } catch {
+                        try Task.checkCancellation()
+                        directFailure = InferenceFailure.classify(error)
+                    }
+                    try Task.checkCancellation()
+                    direct = DirectInferenceObservation(
+                        elapsedMilliseconds: max(0, Int((ProcessInfo.processInfo.systemUptime - start) * 1000)),
+                        replyCharacters: characters, failure: directFailure
+                    )
                 }
                 observations.append(InferenceDiagnosticObservation(
                     scenario: scenario.id,
                     elapsedMilliseconds: elapsed,
                     terminalState: snapshot.status.rawValue,
+                    failure: failure,
+                    direct: direct,
                     modelSteps: snapshot.steps,
                     assistantReplyCharacters: reply.count,
                     pendingApproval: snapshot.pending != nil,

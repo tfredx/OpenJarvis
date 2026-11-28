@@ -43,3 +43,12 @@ This workspace is Linux without Swift, Cargo or Xcode. Available local checks ar
 Baseline `6206921f` (PR #28 integrated). PRs #29 (diagnostics) and #30 (task result isolation) are independent. This branch adds an unregistered EventKit Calendar reader with a maximum seven-day UTC window, at most ten selected calendars, capped summaries and existing full-access checks before and after fetching. It performs no writes and requests no OS access. The dispatcher checks cancellation and app authorization again after awaiting approval. Tests cover cancellation while approval is outstanding and malformed or excessive date ranges.
 
 Local whitespace and build-script checks passed. Swift, native builds and physical access were not tested here. Next: validate Calendar selection and the approval preview, then obtain permission review before enabling the provider and run the signed-device denial, revocation and scope scenarios.
+
+
+## PR #29 — comparative diagnostics
+
+Runs identical synthetic inputs through direct Apple generation and the production agent entry point. Report schema 2 adds elapsed time and content-free failure codes. Prevents concurrent live tasks during diagnostics and documents a consolidated signed-device batch.
+
+Depends on integrated PRs #26 and #27. No new permissions, dependencies, network access or persistence changes. Scripted tests cover independent failure evidence and report redaction. Local whitespace and build-script checks passed. Swift, native builds and device tests were unavailable locally. Require full CI before merge. Session creation and hardware behavior remain unverified.
+
+Current branch refreshed against PR #31 integration; required CI pending.
