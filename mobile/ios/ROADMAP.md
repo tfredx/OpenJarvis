@@ -9,7 +9,7 @@
 | v0.4.1 | Shadow migration preserves source bytes; recovery journal fails closed | Implemented and previously CI-validated; production cutover remains disabled pending full migration and signed-device protection gates |
 | CI/CD | Required regression/security/device+simulator compile validation and versioned downloadable unsigned release artifacts | Pipeline integrated and validated on prior PRs; release-tag path not exercised |
 | v0.5.0 | Swift-first upstream contracts with local inference, bounded execution and explicit approvals | Adapter merged in PR #27; integrated CI unverified; concrete upstream Rust agent is not linked |
-| v0.6.0 | Scoped native device providers with platform permission and approval tests | Permission-neutral dispatcher integrated in PR #28 at `6206921f`; required CI conclusion unverified here; no provider or OS permission is active |
+| v0.6.0 | Scoped native device providers with platform permission and approval tests | PR #28 capability dispatcher integrated at `6206921f`. Scoped Calendar reader implemented on `feat/ios-scoped-calendar-reader`; unregistered with no OS permission request. CI and device tests pending. |
 | v0.7.0 | Checkpointed background workflows with measured device limits | Not started |
 | v0.8.0 | Additional local models and compute routing based on benchmark evidence | Not started; Foundation Models remains default |
 | v0.9.0 | Inspectable personalization and separately reviewed optional Mac companion | Not started |
@@ -27,7 +27,7 @@ The versioned IPA workflow produces unsigned artifacts. The release-tag path and
 
 ## Integration and dependency rules
 
-PRs #26–#28 are integrated. Current integration baseline is `6206921f534f89433fbe14e60069bf26434d1132`. Require complete passing checks for new merges.
+PR #26 diagnostics and PR #27 Swift-first adapter are integrated. PR #28 is refreshed against `84944000710a716af3862adedd7e5ba91bd15a7b`. Preserve scope and require complete passing required checks before merging.
 
 Keep SQLite JSON-to-database production cutover disabled until the foundation's integrated CI is verified and migration interruption, readback, rollback-after-write, backup exclusion, sidecar file protection and signed-device data protection pass. Never restore an outdated JSON source after SQLite writes without preserving later data.
 
@@ -37,10 +37,19 @@ ADR-0009 accepts a Swift adapter using pinned upstream agent contract shapes whi
 
 ## Next executable work
 
-1. **Inference:** report schema 2 compares direct and agent generation and classifies failures. Native CI and a consolidated owner-run device batch remain pending.
-2. **Execution:** cover active-task reentry with scripted provider regression tests, then add durable typed plan and action state.
-3. **Persistence:** advance gated migration and recovery work while keeping JSON authoritative. Verify foundation CI and signed-device protection before activation.
-4. **Capabilities:** implement one provider at a time, beginning with scoped Calendar reads. Review OS permission scope before enabling OS access.
-5. **Observability:** surface task state, checkpoint and approval outcomes, then evaluate resumable App Intents and background APIs.
+1. Verify PR #27 integrated CI and PR #28 refreshed-head CI without repeatedly polling queued runners.
+2. Add deterministic scripted intelligence-provider tests and explicit failure classification to the diagnostics/orchestration path.
+3. Implement migration-state/recovery fault injection only after verified SQLite foundation CI; keep production cutover disabled until signed-device protections are established.
+4. Implement one native provider at a time, beginning with read-only Calendar, after scoped permission and approval review.
+5. Continue checkpointed workflows, routing and personalization only with deterministic regression evidence and honest platform limits.
 
 Never equate compilation or simulator execution with physical-device testing. Preserve historical failures and actual test counts; do not fabricate performance measurements.
+
+
+## PR #29 — comparative diagnostics
+
+Runs identical synthetic inputs through direct Apple generation and the production agent entry point. Report schema 2 adds elapsed time and content-free failure codes. Prevents concurrent live tasks during diagnostics and documents a consolidated signed-device batch.
+
+Depends on integrated PRs #26 and #27. No new permissions, dependencies, network access or persistence changes. Scripted tests cover independent failure evidence and report redaction. Local whitespace and build-script checks passed. Swift, native builds and device tests were unavailable locally. Require full CI before merge. Session creation and hardware behavior remain unverified.
+
+Current branch refreshed against PR #31 integration; required CI pending.
