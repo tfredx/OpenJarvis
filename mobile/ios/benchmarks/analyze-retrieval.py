@@ -60,6 +60,28 @@ def pointwise_policy(evidence, ids):
     return judgments, evidence_for, select
 
 
+def pointwise_tiebreak(rows, approvals, cosine_margin, word_margin):
+    approved = set(approvals(rows))
+    if len(approved) <= 1:
+        return approved
+    eligible = [r for r in rows if r["id"] in approved]
+    for row in eligible:
+        for field, maximum in (("matcher_cosine", 2), ("word_coverage", 1)):
+            value = row.get(field)
+            if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= maximum:
+                return set()
+
+    cosine = sorted(eligible, key=lambda r: r["matcher_cosine"])
+    words = sorted(eligible, key=lambda r: r["word_coverage"], reverse=True)
+    if cosine[0]["id"] != words[0]["id"]:
+        return set()
+    if cosine[1]["matcher_cosine"] - cosine[0]["matcher_cosine"] < cosine_margin:
+        return set()
+    if words[0]["word_coverage"] - words[1]["word_coverage"] < word_margin:
+        return set()
+    return {cosine[0]["id"]}
+
+
 def divide(num, den):
     return num / den if den else None
 
@@ -224,6 +246,13 @@ def main():
                                        "calibration_multiple_approvals": ambiguous}))
         if failures == 0:
             policies["pointwise-single-answer"] = select
+            # Preserve all unique approvals. For ambiguous groups require the
+            # same winner on both native signals and a margin on each.
+            for cosine_gap in (0.02, 0.05, 0.10):
+                for word_gap in (0.025, 0.075, 0.15):
+                    policies[f"pointwise-tiebreak-{cosine_gap}-{word_gap}"] = (
+                        lambda rs, cg=cosine_gap, wg=word_gap: pointwise_tiebreak(rs, approvals, cg, wg)
+                    )
         else:
             print("pointwise-ineligible: incomplete model evidence")
 
