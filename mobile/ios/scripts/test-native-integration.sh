@@ -21,15 +21,32 @@ print(max(candidates)[-1])
 PY
 )
 printf '%s\n' "$DEVICE" | tee audit/simulator-udid.txt
-# xcodebuild boots the selected simulator and executes hosted XCTest.
-# Keep the separate unsigned device and simulator build gates in CI.
 RESULT="$ROOT/audit/native-integration.xcresult"
+DERIVED="$ROOT/.ios-build/simulator"
 [[ ! -e "$RESULT" ]] || { echo "Existing result bundle: remove or archive it before running again." >&2; exit 1; }
+# Refuse stale test configurations before building. Use the exact configuration
+# emitted by this invocation to run tests and package the same simulator host.
+shopt -s nullglob
+existing=("$DERIVED"/Build/Products/*.xctestrun)
+[[ ${#existing[@]} -eq 0 ]] || { echo "Existing simulator test configuration: use fresh simulator derived data." >&2; exit 1; }
+
+version_args=()
+if [[ -n "${IOS_RELEASE_VERSION:-}" ]]; then
+  : "${IOS_RELEASE_BUILD:?A release build number is required}"
+  version_args+=("MARKETING_VERSION=$IOS_RELEASE_VERSION" "CURRENT_PROJECT_VERSION=$IOS_RELEASE_BUILD")
+fi
+
 xcodebuild -project ios/OpenJarvisMobile.xcodeproj -scheme OpenJarvisMobile \
-  -destination "platform=iOS Simulator,id=$DEVICE" \
-  -configuration Debug -parallel-testing-enabled NO \
-  -derivedDataPath .ios-build/native-test \
-  -resultBundlePath "$RESULT" \
-  test 2>&1 | tee audit/native-integration.log
+  -sdk iphonesimulator -destination "platform=iOS Simulator,id=$DEVICE" \
+  -configuration Debug ARCHS=arm64 CODE_SIGNING_ALLOWED=NO \
+  "${version_args[@]}" -derivedDataPath "$DERIVED" \
+  build-for-testing 2>&1 | tee audit/xcode-simulator.log
+configurations=("$DERIVED"/Build/Products/*.xctestrun)
+[[ ${#configurations[@]} -eq 1 && -f "${configurations[0]}" ]] || {
+  echo "Expected exactly one simulator test configuration from this build." >&2; exit 1;
+}
+xcodebuild -xctestrun "${configurations[0]}" -destination "platform=iOS Simulator,id=$DEVICE" \
+  -parallel-testing-enabled NO -resultBundlePath "$RESULT" \
+  test-without-building 2>&1 | tee audit/native-integration.log
 grep -Eq 'Executed [1-9][0-9]* tests?, with 0 failures' audit/native-integration.log
 grep -Fq '** TEST SUCCEEDED **' audit/native-integration.log

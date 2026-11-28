@@ -110,19 +110,7 @@ jobs:
             -configuration Debug CODE_SIGNING_ALLOWED=NO \
             "${version_args[@]}" \
             -derivedDataPath .ios-build/device build 2>&1 | tee audit/xcode-device.log
-      - name: Unsigned simulator build
-        run: |
-          set -o pipefail
-          version_args=()
-          if [[ -n "${IOS_RELEASE_VERSION:-}" ]]; then
-            version_args+=("MARKETING_VERSION=$IOS_RELEASE_VERSION" "CURRENT_PROJECT_VERSION=$IOS_RELEASE_BUILD")
-          fi
-          xcodebuild -project ios/OpenJarvisMobile.xcodeproj -scheme OpenJarvisMobile \
-            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 \
-            -configuration Debug CODE_SIGNING_ALLOWED=NO \
-            "${version_args[@]}" \
-            -derivedDataPath .ios-build/simulator build 2>&1 | tee audit/xcode-simulator.log
-      - name: Run hosted native integration tests
+      - name: Compile unsigned simulator host and run hosted integration tests
         run: ./scripts/test-native-integration.sh
       - name: Package verified unsigned app bundles
         run: ./scripts/package-native-builds.sh
