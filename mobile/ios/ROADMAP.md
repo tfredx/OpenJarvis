@@ -3,13 +3,13 @@
 | Milestone | Exit condition | Status |
 | --- | --- | --- |
 | v0.2.1 | Governance merged; baseline imported; CI configured and observable | Complete |
-| v0.3.0 | Native Rust bridge compiles/links; security and sessions scoped after validation | CI complete; memory retrieval and request-level context policy implemented; physical retest pending |
+| v0.3.0 | Native Rust bridge compiles/links; security and sessions scoped after validation | CI integrated; memory retrieval and request policy implemented; diagnostics harness in PR #26, CI and device validation pending |
 | v0.3.1 | Isolated session storage, task-safe native UI, migration and device tests | Partial: isolated sessions and hosted tests pass; on-device persistence and migration remain unverified |
-| v0.4.0 | Versioned SQLite migration and retrieval tests | Partial: archive, shadow migration and transactional SQLite session operations are implemented; JSON remains authoritative and app/backend cutover is not wired |
+| v0.4.0 | Versioned SQLite migration and retrieval tests | PR #25 transactional operations integrated at `ede3b22`; integrated CI result unknown in this session; JSON remains authoritative and production cutover is not wired |
 | v0.4.1 | Shadow migration rehearsal preserves source bytes; interruption recovery is journaled and fails closed | Complete in CI; JSON remains authoritative, no live cutover |
 | CI/CD | Versioned unsigned IPA artifacts and validation-gated CI | Complete and integrated in PR #20; release-tag path not yet exercised |
-| v0.5.0 | Original upstream agent orchestration integrated through an approval-preserving adapter and tested | Blocked on a consequential Swift/Rust orchestration boundary decision |
-| v0.6.0 | Native device tools, scoped permissions and approvals | Not started |
+| v0.5.0 | Swift-first orchestration follows pinned upstream OjAgent/AgentContext/AgentResult contracts with local inference and approvals | Implemented in PR #27; CI pending; Rust `openjarvis-agents` implementation not linked |
+| v0.6.0 | Native device tools, scoped permissions and approvals | Permission-neutral dispatcher/API and security tests authored on `feat/ios-native-capability-interfaces`; no provider or iOS permission is active; Swift CI pending |
 | v0.7.0 | Checkpointed background workflows, measured device limits | Not started |
 | v0.8.0 | Additional local models and compute routing | Not started |
 | v0.9.0 | Learning and optional Mac companion | Not started |
@@ -25,10 +25,12 @@ PR #20 added the existing repository security audit as a required CI dependency 
 
 PR #22 initial CI identified and corrected a weak lexical match and a context-window issue; an intermediate CI run also caught a truncated test source transfer, which was restored. PR run 46082211356 passed all seven jobs. Integrated run 46083177104 also passed all seven: 62 portable Swift tests, 10 Rust bridge tests/cross-build, 11 hosted native integration tests, five security audits, unsigned arm64 device/simulator builds and artifact packaging. Integrated development artifact 15237619676 is unsigned and does not attest to physical-device execution.
 
-PR #24 run 46086033077 passed the 66-test portable Swift suite, all security jobs, 10 Rust bridge tests, both unsigned builds and 11 hosted native integration tests, and uploaded development IPA artifact 15239452414. Its native job was ultimately cancelled at final diagnostics-artifact retention; PR #25 carries the same tree on a fresh PR ref after the targeted job rerun remained queued without starting; neither PR may merge until a complete required run passes. SQLite CRUD remains isolated from production JSON persistence. A Python SQLite simulation passed 189 session-position compaction cases; Mac CI must provide the Swift and Apple-platform validation.
+PR #24's native run 46086033077 ended cancelled at diagnostics-artifact retention. PR #25 merged SQLite session operations at `ede3b22`; integrated CI evidence is not available from the connected status tools in this session. JSON remains authoritative and migration is gated on confirmed required CI and signed-device data-protection evidence.
+
+PR #26 adds synthetic inference diagnostics; physical execution and CI are not asserted. PR #27 adds the Swift-first upstream contract adapter, preserving Apple Foundation Models and explicit approval. Its tests are authored but not run locally. The v0.6 capability interface defines fixed IDs, default-deny authorization and per-action human approval without activating any OS permissions. Actual iPhone integrations require later scoped permission decisions and device validation.
 
 Only a valid `ios-vX.Y.Z` tag pointing into `ios/main` enters the versioned release-artifact path. Tag-derived versioning and 90-day artifact retention are implemented but not exercised because no release tag was requested or created. Tagging does not create a signed, App Store or production release. Ordinary CI artifacts remain short-lived. Never equate compilation or simulator tests with device execution.
 
-## v0.5 integration constraint
+## v0.5 integration boundary
 
-At the pinned source revision, upstream `openjarvis-agents` uses `rig-core::CompletionModel`; `NativeReActAgent` calls `ToolExecutor` directly, and `OrchestratorAgent` does not yet dispatch tools. The app's inference provider is asynchronous Apple Foundation Models in Swift. The Rust `rig-core` dependency graph includes `reqwest`, which ADR-0002 intentionally excludes from the mobile bridge. Select an integration boundary before changing runtime architecture. Any agent integration must retain explicit user approval, default-deny capabilities, local inference and the current signed-device validation gate.
+At the pinned revision, upstream Rust `openjarvis-agents` uses `rig-core::CompletionModel`; `NativeReActAgent` calls `ToolExecutor` directly, and `OrchestratorAgent` does not yet dispatch tools. ADR-0009 accepts the owner-directed Swift-first adapter using upstream core data/result contracts while retaining Apple Foundation Models. Direct Rust agent linkage remains deferred; any future integration must preserve explicit approval, default-deny capabilities, local inference and signed-device validation.
